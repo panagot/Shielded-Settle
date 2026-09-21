@@ -4,6 +4,8 @@ Recover the real Merkle index for **contract-owned shielded coins** on [Midnight
 
 > **One-liner (submission form):** Developer kit + settlement desk that recovers `mtIndex` when `firstFree` returns `0`, so Compact escrow can release or refund shielded deposits.
 
+**Live demo:** [https://shielded-settle.vercel.app/](https://shielded-settle.vercel.app/)
+
 ## The Midnight problem
 
 When a Compact contract receives a shielded coin, builders often call:

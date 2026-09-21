@@ -11,11 +11,9 @@ Visit [http://localhost:5177](http://localhost:5177).
 
 Recommended click path:
 
-1. **Deploy** escrow contract
-2. **Deposit** with `receiveShielded`
-3. **Probe** documented `firstFree` — expect `0`
-4. **Resolve** with Shielded Settle — recover real `mtIndex`
-5. **Release** or **Refund**
+1. Open **Home** (`/`) and click **Run judge example**, or step through **Desk**
+2. On Desk: **Deploy** → **Deposit** → **Probe** (`firstFree` = 0) → **Resolve** → **Release** / **Refund**
+3. Confirm **Stats**, then **Gap** / **Integrate** for evidence and the kit call
 
 ## 2. Use the TypeScript kit in your app
 

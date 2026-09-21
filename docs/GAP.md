@@ -1,4 +1,4 @@
-# The gap Escrow Index targets
+# The gap Shielded Settle targets
 
 ## Symptom
 
@@ -30,7 +30,7 @@ invalid index into sparse merkle tree: 0
 3. Locate the commitment row owned by the contract address
 4. Use that row’s index as `mtIndex`
 
-Escrow Index packages that into `resolveContractCoinMtIndex`.
+Shielded Settle packages that into `resolveContractCoinMtIndex`.
 
 ## What success looks like
 

@@ -35,7 +35,7 @@ Escrow settlement still needs a proving path (Lace provider when available, othe
 your-dapp/
   contracts/escrow.compact      # start from this repo’s sample
   src/escrow/
-    resolveMtIndex.ts           # copy or import from Escrow Index
+    resolveMtIndex.ts           # copy or import from Shielded Settle
     release.ts                  # builds witness + submits tx
   src/ui/                       # optional operator console
 ```

@@ -8,6 +8,7 @@ import { IntegratePage } from "./pages/IntegratePage";
 import { GapPage } from "./pages/GapPage";
 import { DocsPage } from "./pages/DocsPage";
 import { DemoPage } from "./pages/DemoPage";
+import { HomePage } from "./pages/HomePage";
 
 export function App() {
   return (
@@ -17,14 +18,14 @@ export function App() {
           <div className="void-wash" aria-hidden />
           <Routes>
             <Route element={<Shell />}>
-              <Route index element={<Navigate to="/desk" replace />} />
+              <Route index element={<HomePage />} />
               <Route path="/desk" element={<DeskPage />} />
               <Route path="/stats" element={<StatsPage />} />
               <Route path="/integrate" element={<IntegratePage />} />
               <Route path="/gap" element={<GapPage />} />
               <Route path="/docs" element={<DocsPage />} />
               <Route path="/demo" element={<DemoPage />} />
-              <Route path="*" element={<Navigate to="/desk" replace />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>
         </SessionProvider>

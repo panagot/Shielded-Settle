@@ -13,6 +13,13 @@ import {
 import { deriveStats, type SessionPoint, type SessionStats } from "./sessionStats";
 import type { EscrowStatus } from "@kit/types";
 
+export type ExampleStep = {
+  id: string;
+  title: string;
+  detail: string;
+  tone: "neutral" | "danger" | "ok";
+};
+
 type SessionValue = {
   engine: EscrowEngineState;
   points: SessionPoint[];
@@ -32,6 +39,7 @@ type SessionValue = {
   canNaive: boolean;
   canResolve: boolean;
   canSettle: boolean;
+  exampleSteps: ExampleStep[];
   setDepositor: (v: string) => void;
   setBeneficiary: (v: string) => void;
   setAmountRaw: (v: string) => void;
@@ -43,6 +51,7 @@ type SessionValue = {
   refund: () => void;
   reset: () => void;
   runPrimary: () => void;
+  runExampleDeal: (outcome?: "released" | "refunded") => ExampleStep[];
 };
 
 const SessionContext = createContext<SessionValue | null>(null);
@@ -56,6 +65,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [amountRaw, setAmountRawState] = useState("25");
   const [formError, setFormError] = useState<string | null>(null);
   const [pulse, setPulse] = useState(false);
+  const [exampleSteps, setExampleSteps] = useState<ExampleStep[]>([]);
 
   const stats = useMemo(() => {
     const live = deriveStats(engine.events, points);
@@ -198,6 +208,65 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     reset();
   }
 
+  function runExampleDeal(outcome: "released" | "refunded" = "released"): ExampleStep[] {
+    const steps: ExampleStep[] = [];
+    rememberAttempts(engine);
+
+    const dep = "Alice";
+    const ben = "Bob";
+    const amt = 25_000_000n;
+    setDepositor(dep);
+    setBeneficiary(ben);
+    setAmountRawState("25");
+    setFormError(null);
+
+    let next = createEmptyEngine();
+    next = deployEscrow(next, { depositor: dep, beneficiary: ben, amount: amt });
+    steps.push({
+      id: "deploy",
+      title: "Deploy",
+      detail: `Vault ${next.deal?.contractAddress ?? "—"}`,
+      tone: "neutral",
+    });
+
+    next = depositShielded(next);
+    steps.push({
+      id: "deposit",
+      title: "Deposit",
+      detail: "25 NIGHT received via receiveShielded",
+      tone: "neutral",
+    });
+
+    next = attemptNaiveResolve(next);
+    steps.push({
+      id: "probe",
+      title: "Probe firstFree",
+      detail: `Public index = ${next.deal?.firstFreeObserved?.toString() ?? "0"} (lie)`,
+      tone: "danger",
+    });
+
+    next = resolveWithKit(next);
+    steps.push({
+      id: "resolve",
+      title: "Resolve with kit",
+      detail: `Qualified mtIndex = ${next.deal?.qualified?.mtIndex?.toString() ?? "—"}`,
+      tone: "ok",
+    });
+
+    next = outcome === "refunded" ? refundToDepositor(next) : releaseToBeneficiary(next);
+    steps.push({
+      id: "settle",
+      title: outcome === "refunded" ? "Refund → Alice" : "Release → Bob",
+      detail: "sendShielded with non-zero mtIndex · second spend blocked",
+      tone: "ok",
+    });
+
+    setExampleSteps(steps);
+    recordSettle(next);
+    flash();
+    return steps;
+  }
+
   const value: SessionValue = {
     engine,
     points,
@@ -217,6 +286,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     canNaive,
     canResolve,
     canSettle,
+    exampleSteps,
     setDepositor,
     setBeneficiary,
     setAmountRaw: (v) => {
@@ -231,6 +301,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     refund,
     reset,
     runPrimary,
+    runExampleDeal,
   };
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

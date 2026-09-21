@@ -18,12 +18,13 @@ export function Footer() {
 
       <div className="foot-col">
         <p className="foot-label">Pages</p>
+        <Link to="/">Home</Link>
         <Link to="/desk">Desk</Link>
+        <Link to="/demo">Demo</Link>
         <Link to="/stats">Stats</Link>
         <Link to="/integrate">Integrate</Link>
         <Link to="/gap">Gap</Link>
         <Link to="/docs">Docs</Link>
-        <Link to="/demo">Demo</Link>
       </div>
 
       <div className="foot-col">

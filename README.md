@@ -40,22 +40,23 @@ npm test         # 31 fund-safety tests
 npm run dev      # http://localhost:5177
 ```
 
-**Demo click path**
+**Demo click path (judges)**
 
-1. Open `/desk`
-2. Deploy → Deposit → Probe (`firstFree` = 0) → Resolve → Release (or Refund)
+1. Open `/` — click **Run example settle** (or use `/demo`)
+2. Watch deposit → probe (`firstFree` = 0) → resolve → release
 3. Confirm `/stats` recorded the session
 4. Open `/gap` for the failure string and `#187` evidence
 5. Open `/integrate` for the copy-ready kit call
 
 | Route | Purpose |
 |---|---|
+| `/` | Judge landing + one-click example |
 | `/desk` | Deploy → deposit → probe → resolve → settle |
+| `/demo` | Live example settle + video slot |
 | `/stats` | Session KPIs from deals in this tab |
 | `/integrate` | Resolver snippet + acceptance checks |
 | `/gap` | Why `firstFree` lies |
 | `/docs` | Kit docs index |
-| `/demo` | Walkthrough video (optional YouTube) |
 | `/deck.html` | Hackathon slide deck (print to PDF) |
 
 ## How Midnight is used

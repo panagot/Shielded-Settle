@@ -1,4 +1,4 @@
-import { ArrowRight, ArrowsClockwise, WarningCircle } from "@phosphor-icons/react";
+import { ArrowRight, ArrowsClockwise, Play, WarningCircle } from "@phosphor-icons/react";
 import { Link } from "react-router-dom";
 import { formatIndex, formatNight } from "@kit/index";
 import { FlowSteps } from "../components/FlowSteps";
@@ -147,6 +147,21 @@ export function DeskPage() {
         </div>
         <FlowSteps status={s.status} />
       </header>
+
+      <div className="judge-strip">
+        <div>
+          <p className="eyebrow">For judges</p>
+          <p>One click runs deposit → probe (firstFree = 0) → resolve → release on the sim ledger.</p>
+        </div>
+        <button
+          type="button"
+          className="btn btn-line"
+          onClick={() => s.runExampleDeal("released")}
+        >
+          <Play size={16} weight="fill" />
+          Run example settle
+        </button>
+      </div>
 
       <div className={`command-bar tone-${s.status}`} role="region" aria-label="Next action">
         <div className="command-meta">

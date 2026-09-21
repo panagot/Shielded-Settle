@@ -1,26 +1,23 @@
-# How to use Escrow Index
+# How to use Shielded Settle
 
 ## 1. Run the demo
 
 ```bash
-cd MIDNIGHT/escrow-index
 npm install
 npm run dev
 ```
 
-Visit `http://localhost:5177`.
+Visit [http://localhost:5177](http://localhost:5177).
 
 Recommended click path:
 
-1. **Deploy escrow contract**
-2. **Deposit with receiveShielded**
-3. **Try documented firstFree** — expect failure (`0`)
-4. **Resolve with Escrow Index** — recover real `mtIndex`
+1. **Deploy** escrow contract
+2. **Deposit** with `receiveShielded`
+3. **Probe** documented `firstFree` — expect `0`
+4. **Resolve** with Shielded Settle — recover real `mtIndex`
 5. **Release** or **Refund**
 
 ## 2. Use the TypeScript kit in your app
-
-Import from `src/kit`:
 
 ```ts
 import {

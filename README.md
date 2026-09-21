@@ -2,6 +2,10 @@
 
 Recover the real Merkle index for **contract-owned shielded coins** on [Midnight](https://midnight.network), then settle escrow that can actually spend them.
 
+> **One-liner (submission form):** Developer kit + settlement desk that recovers `mtIndex` when `firstFree` returns `0`, so Compact escrow can release or refund shielded deposits.
+
+## The Midnight problem
+
 When a Compact contract receives a shielded coin, builders often call:
 
 ```ts
@@ -17,37 +21,56 @@ invalid index into sparse merkle tree: 0
 
 That gap is tracked in [servicedesk#187](https://github.com/midnightntwrk/servicedesk/issues/187). Shielded Settle packages the community workaround into a TypeScript kit and a settlement desk you can demo in the browser.
 
-## What it does
+## What this repo is
 
-1. **Deposit** shielded NIGHT into a contract vault (`receiveShielded`)
-2. **Probe** the documented `firstFree` path (expect `0`)
-3. **Resolve** the real `mtIndex` from the zswap debug dump
-4. **Release** or **refund** with a qualified, non-zero index
-5. **Refuse** a second spend of the same coin
+| Layer | What judges get |
+|---|---|
+| **Compact sample** | `contracts/escrow.compact` — shielded `deposit` / `release` / `refund` |
+| **TypeScript kit** | `src/kit` — `resolveContractCoinMtIndex` + fund-safety guards |
+| **Demo UI** | Vite React desk that **simulates** the ledger so anyone can reproduce the bug and the fix without Lace or Preprod |
 
-The UI is an honest **simulated ledger**. It does not move mainnet funds. The resolver in `src/kit` is what you wire into a live Compact dApp.
+The UI is an honest **simulated ledger**. It does not move mainnet or Preprod funds. The resolver in `src/kit` is what you wire into a live Compact dApp with an indexer and proof server.
 
-## Live demo
-
-Deploy this repo on Vercel (Vite preset), or run locally:
+## How to run (judges)
 
 ```bash
 npm install
-npm run dev
+npm run build    # compiles; required check
+npm test         # 31 fund-safety tests
+npm run dev      # http://localhost:5177
 ```
 
-Open [http://localhost:5177](http://localhost:5177)
+**Demo click path**
+
+1. Open `/desk`
+2. Deploy → Deposit → Probe (`firstFree` = 0) → Resolve → Release (or Refund)
+3. Confirm `/stats` recorded the session
+4. Open `/gap` for the failure string and `#187` evidence
+5. Open `/integrate` for the copy-ready kit call
 
 | Route | Purpose |
 |---|---|
-| `/desk` | Run deploy → deposit → probe → resolve → settle |
-| `/stats` | Session KPIs and charts from deals in this tab |
-| `/integrate` | Copy the resolver call and acceptance checks |
-| `/gap` | Why `firstFree` lies, with evidence for #187 |
-| `/docs` | How to run the demo and where the kit files live |
-| `/demo` | Walkthrough video page (paste your YouTube URL) |
+| `/desk` | Deploy → deposit → probe → resolve → settle |
+| `/stats` | Session KPIs from deals in this tab |
+| `/integrate` | Resolver snippet + acceptance checks |
+| `/gap` | Why `firstFree` lies |
+| `/docs` | Kit docs index |
+| `/demo` | Walkthrough video (optional YouTube) |
+| `/deck.html` | Hackathon slide deck (print to PDF) |
 
-Interactive slide deck (print to PDF): open `/deck.html` after deploy, or see [`docs/Shielded-Settle-Deck.pdf`](docs/Shielded-Settle-Deck.pdf).
+## How Midnight is used
+
+**Privacy.** Amounts stay in shielded coins. The contract holds a vault coin via `receiveShielded` and later spends with `sendShielded`. Parties and funded/settled flags can sit on ledger; value and commitment stay shielded.
+
+**What Compact proves.** Ownership of the escrow flow (who may release/refund, single settle). The spend witness must include a correct `QualifiedShieldedCoinInfo.mtIndex`.
+
+**What the kit fixes.** Until Midnight exposes a first-class contract-coin index API, the documented `firstFree` path is wrong for coins the contract owns. The kit:
+
+1. Records the public `firstFree` (often `0`)
+2. Parses `ZswapChainState.toString(true)` for **this** contract’s commitment only
+3. Returns a non-zero `mtIndex` / `qualified` coin, or refuses to guess
+
+Fund-safety: refuses `mtIndex === 0`, wrong-contract dump matches, ambiguous multi-index dumps, party collision, over-precision amounts, and a second spend of the same coin.
 
 ## Kit API
 
@@ -76,32 +99,27 @@ if (!result.ok || !result.qualified) {
 
 | Path | Purpose |
 |---|---|
-| `src/kit/` | Resolver + escrow flow engine |
+| `src/kit/` | Resolver + escrow flow engine + tests |
 | `src/ui/` | Settlement desk (React + Vite) |
 | `contracts/escrow.compact` | Sample Compact escrow |
-| `docs/` | How to use, gap notes, live integration |
+| `docs/` | How to use, gap notes, integration, deck PDF |
+| `public/deck.html` | Printable slide deck |
 
-## Scripts
+## Honest scope (read this)
 
-```bash
-npm run dev        # local demo UI
-npm run build      # production build (Vercel)
-npm test           # fund-safety kit tests
-npm run typecheck
-```
+- **Demo UI ≠ live Midnight node.** It reproduces `#187` locally so review does not require Lace, Docker proof server, or Preprod faucet.
+- **Compact sample** compiles with your Midnight Compact toolchain (language 0.23+ / compiler 0.31.x family). Adjust Standard Library imports if your install differs. `npm run build` compiles the TypeScript app; it does not invoke `compact`.
+- Dump-parsing is a **temporary workaround**. Keep the kit API; swap the dump path for the official lookup when `#187` is fixed.
 
-## Honest scope
+## Docs
 
-- Demo mode does **not** connect to Midnight mainnet or preprod.
-- The Compact sample needs your local `compact` toolchain to compile.
-- Dump-parsing is a **temporary workaround** until Midnight ships a first-class contract-coin index API. Keep the kit’s call shape; swap the dump path for the official lookup when it lands.
+- [How to use](docs/HOW_TO_USE.md)
+- [The gap](docs/GAP.md)
+- [Live integration](docs/INTEGRATION.md)
+- [Slide deck PDF](docs/Shielded-Settle-Deck.pdf)
 
 ## References
 
 - [servicedesk#187](https://github.com/midnightntwrk/servicedesk/issues/187)
 - [Forum: contract-owned mtIndex gap](https://forum.midnight.network/t/a-gap-in-contract-owned-shielded-coin-handling-no-documented-way-to-get-the-real-mtindex-plus-a-couple-of-related-notes/1338)
-- [How to use](docs/HOW_TO_USE.md) · [Gap](docs/GAP.md) · [Integration](docs/INTEGRATION.md)
-
-## License
-
-Private / hackathon submission unless otherwise noted.
+- [Midnight Korea Hackathon 2026](https://www.hackathon.midnightkorea.org/)

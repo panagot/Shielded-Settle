@@ -1,0 +1,17 @@
+# Dependencies
+node_modules
+
+# Build
+dist
+*.tsbuildinfo
+
+# Local / agent
+.DS_Store
+.env
+.env.*
+.shots
+*.log
+
+# Internal design notes (not required to run)
+PRODUCT.md
+DESIGN.md

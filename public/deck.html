@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Shielded Settle — Midnight Korea Hackathon 2026</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --void: #07080c;
+        --panel: #10131a;
+        --ink: #f4f7ff;
+        --muted: #b4c0dc;
+        --line: rgba(183, 198, 255, 0.22);
+        --accent: #6d8bff;
+        --ice: #c5d2ff;
+        --ok: #3ddeb4;
+        --danger: #ff8b84;
+        --brand: #0000fe;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        background: #111;
+        color: var(--ink);
+        font-family: Outfit, system-ui, sans-serif;
+      }
+
+      .toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1.25rem;
+        background: rgba(7, 8, 12, 0.92);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .toolbar p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+
+      .toolbar button,
+      .toolbar a.btn {
+        appearance: none;
+        border: 1px solid var(--line);
+        background: var(--accent);
+        color: #fff;
+        font: inherit;
+        font-weight: 600;
+        padding: 0.55rem 0.9rem;
+        cursor: pointer;
+        text-decoration: none;
+      }
+
+      .toolbar a.btn.ghost {
+        background: transparent;
+        color: var(--ink);
+      }
+
+      .deck {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 1.25rem;
+        display: grid;
+        gap: 1.25rem;
+      }
+
+      .slide {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        background:
+          radial-gradient(700px 380px at 92% -10%, rgba(109, 139, 255, 0.28), transparent 55%),
+          radial-gradient(520px 300px at 0% 100%, rgba(61, 222, 180, 0.08), transparent 50%),
+          var(--void);
+        border: 1px solid var(--line);
+        padding: 2.4rem 2.75rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        page-break-after: always;
+        break-after: page;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .slide::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: linear-gradient(var(--line) 1px, transparent 1px);
+        background-size: 100% 48px;
+        opacity: 0.12;
+        pointer-events: none;
+      }
+
+      .slide > * {
+        position: relative;
+        z-index: 1;
+      }
+
+      .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .mark {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        font-size: 0.78rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--ice);
+        font-weight: 600;
+      }
+
+      .dots {
+        display: grid;
+        grid-template-columns: repeat(3, 7px);
+        gap: 4px;
+      }
+
+      .dots i {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        display: block;
+      }
+
+      .dots i:nth-child(1) {
+        background: var(--danger);
+      }
+      .dots i:nth-child(2) {
+        background: var(--accent);
+      }
+      .dots i:nth-child(3) {
+        background: var(--ok);
+      }
+
+      .num {
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 3.2rem;
+        letter-spacing: -0.04em;
+        line-height: 1.05;
+        max-width: 14ch;
+      }
+
+      h2 {
+        margin: 0 0 0.75rem;
+        font-size: 2.2rem;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+      }
+
+      .lede {
+        margin: 0.85rem 0 0;
+        max-width: 42ch;
+        color: var(--muted);
+        font-size: 1.15rem;
+        line-height: 1.45;
+      }
+
+      .foot {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        color: var(--muted);
+        font-size: 0.78rem;
+        letter-spacing: 0.04em;
+      }
+
+      .mono {
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+      }
+
+      .pill {
+        display: inline-flex;
+        padding: 0.28rem 0.55rem;
+        border: 1px solid rgba(255, 139, 132, 0.55);
+        background: rgba(255, 139, 132, 0.12);
+        color: #ffd2ce;
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 0.92rem;
+      }
+
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+        margin-top: 1rem;
+      }
+
+      .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.9rem;
+        margin-top: 1rem;
+      }
+
+      .card {
+        border-top: 1px solid var(--line);
+        padding-top: 0.85rem;
+      }
+
+      .card strong {
+        display: block;
+        margin-bottom: 0.35rem;
+        font-size: 1.05rem;
+      }
+
+      .card p,
+      .card li {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.95rem;
+        line-height: 1.45;
+      }
+
+      .card ul {
+        margin: 0;
+        padding-left: 1.1rem;
+        color: var(--muted);
+      }
+
+      .compare {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .box {
+        border: 1px solid var(--line);
+        padding: 1rem 1.1rem;
+        background: rgba(16, 19, 26, 0.65);
+      }
+
+      .box h3 {
+        margin: 0 0 0.55rem;
+        font-size: 0.78rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .lie {
+        color: var(--danger);
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 2rem;
+        margin: 0.2rem 0;
+      }
+
+      .win {
+        color: var(--ok);
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 2rem;
+        margin: 0.2rem 0;
+      }
+
+      .steps {
+        list-style: none;
+        margin: 1rem 0 0;
+        padding: 0;
+        display: grid;
+        gap: 0.55rem;
+      }
+
+      .steps li {
+        display: grid;
+        grid-template-columns: 2.4rem 1fr;
+        gap: 0.75rem;
+        align-items: baseline;
+        padding: 0.55rem 0;
+        border-top: 1px solid var(--line);
+      }
+
+      .steps span {
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        color: var(--ice);
+        font-size: 0.85rem;
+      }
+
+      .code {
+        margin-top: 0.85rem;
+        padding: 0.9rem 1rem;
+        background: #0c0e14;
+        border: 1px solid var(--line);
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 0.82rem;
+        line-height: 1.55;
+        color: var(--ice);
+        white-space: pre-wrap;
+      }
+
+      .hero-title {
+        max-width: 12ch;
+      }
+
+      .tagline {
+        margin-top: 1rem;
+        color: var(--ice);
+        font-size: 1.2rem;
+        max-width: 28ch;
+        line-height: 1.35;
+      }
+
+      @media print {
+        .toolbar {
+          display: none !important;
+        }
+
+        body {
+          background: #000;
+        }
+
+        .deck {
+          max-width: none;
+          margin: 0;
+          padding: 0;
+          gap: 0;
+        }
+
+        .slide {
+          width: 11.5in;
+          height: 6.48in;
+          aspect-ratio: auto;
+          margin: 0;
+          border: none;
+          page-break-after: always;
+          break-after: page;
+        }
+
+        .slide:last-child {
+          page-break-after: auto;
+        }
+      }
+
+      @page {
+        size: 13.333in 7.5in landscape;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="toolbar">
+      <p>Shielded Settle · open Print → Save as PDF (landscape). Or use the generated file in <code>docs/Shielded-Settle-Deck.pdf</code>.</p>
+      <div>
+        <a class="btn ghost" href="/demo">Demo page</a>
+        <button type="button" onclick="window.print()">Print / Save PDF</button>
+      </div>
+    </div>
+
+    <main class="deck">
+      <!-- 01 -->
+      <section class="slide">
+        <div class="top">
+          <div class="mark">
+            <span class="dots" aria-hidden><i></i><i></i><i></i></span>
+            Midnight Korea Hackathon 2026
+          </div>
+          <span class="num">01 / 08</span>
+        </div>
+        <div>
+          <h1 class="hero-title">Shielded Settle</h1>
+          <p class="tagline">Recover the real mtIndex. Make contract-held shielded coins spendable again.</p>
+          <p class="lede">Individual submission · Compact escrow + TypeScript kit + settlement desk</p>
+        </div>
+        <div class="foot">
+          <span>github.com/panagot/Shielded-Settle</span>
+          <span>servicedesk#187</span>
+        </div>
+      </section>
+
+      <!-- 02 -->
+      <section class="slide">
+        <div class="top">
+          <div class="mark">
+            <span class="dots" aria-hidden><i></i><i></i><i></i></span>
+            The problem
+          </div>
+          <span class="num">02 / 08</span>
+        </div>
+        <div>
+          <h2>firstFree returns 0</h2>
+          <p class="lede">
+            A Compact contract can receive a shielded coin and still have no documented way to read that coin’s Merkle index. The next spend fails.
+          </p>
+          <p class="pill" style="margin-top: 1.1rem">invalid index into sparse merkle tree: 0</p>
+          <div class="grid-2" style="margin-top: 1.4rem">
+            <div class="card">
+              <strong>What builders do</strong>
+              <p>Pass <span class="mono">queryZSwapAndContractState(...).firstFree</span> into <span class="mono">sendShielded</span> as <span class="mono">mtIndex</span>.</p>
+            </div>
+            <div class="card">
+              <strong>What breaks</strong>
+              <p>For contract-owned coins, <span class="mono">firstFree</span> often lies. Escrow, marketplace, and treasury payouts stall after deposit.</p>
+            </div>
+          </div>
+        </div>
+        <div class="foot">
+          <span>Evidence: midnightntwrk/servicedesk#187</span>
+          <span>Midnight forum thread on contract-owned mtIndex</span>
+        </div>
+      </section>
+
+      <!-- 03 -->
+      <section class="slide">
+        <div class="top">
+          <div class="mark">
+            <span class="dots" aria-hidden><i></i><i></i><i></i></span>
+            The fix
+          </div>
+          <span class="num">03 / 08</span>
+        </div>
+        <div>
+          <h2>Documented query vs kit</h2>
+          <div class="compare">
+            <div class="box">
+              <h3>Documented query</h3>
+              <p class="lie">0</p>
+              <p style="margin: 0; color: var(--muted)">firstFree · proof rejects index 0</p>
+            </div>
+            <div class="box">
+              <h3>Shielded Settle</h3>
+              <p class="win">46 · 51 · 80…</p>
+              <p style="margin: 0; color: var(--muted)">real mtIndex · release or refund spends</p>
+            </div>
+          </div>
+          <ol class="steps">
+            <li><span>01</span><div>Deserialize zswap chain state from the indexer</div></li>
+            <li><span>02</span><div>Call debug <span class="mono">toString(true)</span></div></li>
+            <li><span>03</span><div>Locate the commitment owned by the contract</div></li>
+            <li><span>04</span><div>Qualify with <span class="mono">resolveContractCoinMtIndex</span></div></li>
+          </ol>
+        </div>
+        <div class="foot">
+          <span>Temporary workaround until a first-class API exists</span>
+          <span>Keep the kit call shape when #187 lands</span>
+        </div>
+      </section>
+
+      <!-- 04 -->
+      <section class="slide">
+        <div class="top">
+          <div class="mark">
+            <span class="dots" aria-hidden><i></i><i></i><i></i></span>
+            Demo path
+          </div>
+          <span class="num">04 / 08</span>
+        </div>
+        <div>
+          <h2>Settlement desk in five clicks</h2>
+          <ol class="steps">
+            <li><span>01</span><div><strong>Deploy</strong> — create the escrow vault on the simulated ledger</div></li>
+            <li><span>02</span><div><strong>Deposit</strong> — <span class="mono">receiveShielded</span>; coin enters the tree</div></li>
+            <li><span>03</span><div><strong>Probe</strong> — documented <span class="mono">firstFree</span> (expect 0)</div></li>
+            <li><span>04</span><div><strong>Resolve</strong> — kit recovers the real Merkle position</div></li>
+            <li><span>05</span><div><strong>Release / Refund</strong> — spend once; second spend is blocked</div></li>
+          </ol>
+        </div>
+        <div class="foot">
+          <span>Honest simulation · no mainnet funds move</span>
+          <span>/desk · /stats · /integrate · /gap · /demo</span>
+        </div>
+      </section>
+
+      <!-- 05 -->
+      <section class="slide">
+        <div class="top">
+          <div class="mark">
+            <span class="dots" aria-hidden><i></i><i></i><i></i></span>
+            Midnight
+          </div>
+          <span class="num">05 / 08</span>
+        </div>
+        <div>
+          <h2>What Compact proves &amp; hides</h2>
+          <div class="grid-3">
+            <div class="card">
+              <strong>On ledger</strong>
+              <p>Depositor / beneficiary identities, funded and settled flags, vault occupancy.</p>
+            </div>
+            <div class="card">
+              <strong>Shielded</strong>
+              <p>Coin value and commitment stay private. Spend needs a correct <span class="mono">QualifiedShieldedCoinInfo</span>.</p>
+            </div>
+            <div class="card">
+              <strong>Why privacy</strong>
+              <p>Escrow should not force amounts or payment history into the clear.</p>
+            </div>
+          </div>
+          <p class="lede" style="margin-top: 1.25rem">
+            Circuits: <span class="mono">deposit</span> → <span class="mono">receiveShielded</span> · <span class="mono">release</span> / <span class="mono">refund</span> → <span class="mono">sendShielded</span>
+          </p>
+        </div>
+        <div class="foot">
+          <span>contracts/escrow.compact</span>
+          <span>Witness must carry the real mtIndex across transactions</span>
+        </div>
+      </section>
+
+      <!-- 06 -->
+      <section class="slide">
+        <div class="top">
+          <div class="mark">
+            <span class="dots" aria-hidden><i></i><i></i><i></i></span>
+            Kit API
+          </div>
+          <span class="num">06 / 08</span>
+        </div>
+        <div>
+          <h2>One call to qualify the coin</h2>
+          <div class="code">const result = resolveContractCoinMtIndex({
+  snapshot: { firstFree: 0n, debugDump },
+  lookup: { contractAddress, coin },
+});
+
+if (!result.ok || !result.qualified) throw new Error(result.detail);
+await release(result.qualified);</div>
+          <div class="grid-2" style="margin-top: 1rem">
+            <div class="card">
+              <strong>Boundary</strong>
+              <p>The kit qualifies. Lace or an HTTP proof server still builds the proof.</p>
+            </div>
+            <div class="card">
+              <strong>Safety</strong>
+              <p>Double-spend blocked · wrong-contract dump refused · party collision refused · 31 fund-safety tests.</p>
+            </div>
+          </div>
+        </div>
+        <div class="foot">
+          <span>src/kit/resolveMtIndex.ts</span>
+          <span>npm test</span>
+        </div>
+      </section>
+
+      <!-- 07 -->
+      <section class="slide">
+        <div class="top">
+          <div class="mark">
+            <span class="dots" aria-hidden><i></i><i></i><i></i></span>
+            Product
+          </div>
+          <span class="num">07 / 08</span>
+        </div>
+        <div>
+          <h2>What judges can open</h2>
+          <div class="grid-3">
+            <div class="card">
+              <strong>Desk</strong>
+              <p>Operator console. Signal band: coral lie · ice ledger · mint kit.</p>
+            </div>
+            <div class="card">
+              <strong>Stats</strong>
+              <p>Live session KPIs and charts from deals settled in this tab.</p>
+            </div>
+            <div class="card">
+              <strong>Gap · Integrate · Docs · Demo</strong>
+              <p>Evidence for #187, copy-ready snippet, run path, and video walkthrough.</p>
+            </div>
+          </div>
+        </div>
+        <div class="foot">
+          <span>Stats are session data, not fake telemetry</span>
+          <span>Vercel-ready Vite SPA</span>
+        </div>
+      </section>
+
+      <!-- 08 -->
+      <section class="slide">
+        <div class="top">
+          <div class="mark">
+            <span class="dots" aria-hidden><i></i><i></i><i></i></span>
+            Close
+          </div>
+          <span class="num">08 / 08</span>
+        </div>
+        <div>
+          <h1 style="max-width: 16ch; font-size: 2.8rem">One job: make contract-held shielded coins spendable again.</h1>
+          <p class="lede">Shielded Settle · Midnight Korea Hackathon 2026</p>
+          <p class="tagline" style="max-width: 36ch; margin-top: 1.4rem">github.com/panagot/Shielded-Settle</p>
+        </div>
+        <div class="foot">
+          <span>Demo · Docs · Kit · Compact sample</span>
+          <span>Thank you</span>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

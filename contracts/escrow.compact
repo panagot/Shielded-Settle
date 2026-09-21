@@ -1,0 +1,89 @@
+// Escrow Index — sample Compact contract
+// Language target: Compact 0.23+ / compiler 0.31.x
+//
+// Purpose: accept a shielded deposit, hold it as QualifiedShieldedCoinInfo,
+// then release or refund with sendShielded.
+//
+// IMPORTANT: circuits store the coin via writeCoin / ledger helpers.
+// Off-chain, callers must supply the real mtIndex when building witnesses
+// for a later sendShielded. Use the Escrow Index TypeScript kit to resolve
+// that index until Midnight ships a first-class API (servicedesk#187).
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger depositor: Bytes<32>;
+export ledger beneficiary: Bytes<32>;
+export ledger escrowVault: Opaque<"QualifiedShieldedCoinInfo">;
+export ledger funded: Boolean;
+export ledger settled: Boolean;
+
+constructor(dep: Bytes<32>, ben: Bytes<32>) {
+  depositor = dep;
+  beneficiary = ben;
+  funded = false;
+  settled = false;
+}
+
+/**
+ * Buyer deposits a shielded coin into the contract.
+ * Off-chain: wait for commitment, then resolve mtIndex with Escrow Index.
+ */
+export circuit deposit(coin: ShieldedCoinInfo): [] {
+  assert(funded == false, "already funded");
+  assert(settled == false, "already settled");
+
+  receiveShielded(disclose(coin));
+  // Persist with runtime-resolved index for *this* transaction.
+  // Cross-transaction spend still needs the real tree position off-chain.
+  escrowVault = writeCoin(disclose(coin), right<ZswapCoinPublicKey, ContractAddress>(kernel.self()));
+  funded = true;
+}
+
+/**
+ * Release held funds to the beneficiary.
+ * Witness must include QualifiedShieldedCoinInfo with a correct mtIndex.
+ */
+export circuit release(
+  coin: QualifiedShieldedCoinInfo,
+  caller: Bytes<32>,
+): ShieldedSendResult {
+  assert(funded == true, "not funded");
+  assert(settled == false, "already settled");
+  assert(disclose(caller) == beneficiary, "caller is not beneficiary");
+  assert(disclose(coin.mt_index) != 0, "mt_index must be non-zero for committed coins");
+
+  const result = sendShielded(
+    disclose(coin),
+    left<ZswapCoinPublicKey, ContractAddress>(ZswapCoinPublicKey { bytes: beneficiary }),
+    disclose(coin.value),
+  );
+
+  settled = true;
+  funded = false;
+  return result;
+}
+
+/**
+ * Refund held funds to the original depositor.
+ */
+export circuit refund(
+  coin: QualifiedShieldedCoinInfo,
+  caller: Bytes<32>,
+): ShieldedSendResult {
+  assert(funded == true, "not funded");
+  assert(settled == false, "already settled");
+  assert(disclose(caller) == depositor, "caller is not depositor");
+  assert(disclose(coin.mt_index) != 0, "mt_index must be non-zero for committed coins");
+
+  const result = sendShielded(
+    disclose(coin),
+    left<ZswapCoinPublicKey, ContractAddress>(ZswapCoinPublicKey { bytes: depositor }),
+    disclose(coin.value),
+  );
+
+  settled = true;
+  funded = false;
+  return result;
+}

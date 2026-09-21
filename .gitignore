@@ -16,3 +16,6 @@ dist
 # Internal design notes (not required to run)
 PRODUCT.md
 DESIGN.md
+
+# Compact toolchain cache (fetched binaries)
+node_modules/@midnight-ntwrk/midnight-js-compact/managed

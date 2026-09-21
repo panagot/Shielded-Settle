@@ -10,22 +10,49 @@
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "compact:fetch": "cross-env COMPACTC_VERSION=0.31.0 fetch-compactc --version=0.31.0",
+    "compact": "cross-env COMPACTC_VERSION=0.31.0 run-compactc ./contracts/escrow.compact ./contracts/managed/escrow && node scripts/copy-zk-assets.mjs",
+    "zk:copy": "node scripts/copy-zk-assets.mjs",
+    "proof-server": "docker compose -f proof-server-local.yml up -d",
+    "proof-server:down": "docker compose -f proof-server-local.yml down"
   },
   "dependencies": {
+    "@midnight-ntwrk/dapp-connector-api": "^4.0.1",
+    "@midnight-ntwrk/midnight-js-compact": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-contracts": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-dapp-connector-proof-provider": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-fetch-zk-config-provider": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-http-client-proof-provider": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-level-private-state-provider": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-network-id": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-node-zk-config-provider": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-protocol": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-types": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-utils": "^4.1.1",
     "@phosphor-icons/react": "^2.1.10",
     "@radix-ui/react-tooltip": "^1.2.16",
+    "buffer": "^6.0.3",
+    "fp-ts": "^2.16.11",
+    "pino": "^10.3.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.18.4",
-    "recharts": "^3.10.1"
+    "recharts": "^3.10.1",
+    "rxjs": "^7.8.2",
+    "semver": "^7.8.5"
   },
   "devDependencies": {
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
+    "@types/semver": "^7.8.0",
     "@vitejs/plugin-react": "^5.0.2",
+    "cross-env": "^10.1.0",
     "typescript": "^5.9.2",
     "vite": "^7.1.5",
+    "vite-plugin-top-level-await": "^1.6.0",
+    "vite-plugin-wasm": "^3.6.0",
     "vitest": "^3.2.4"
   }
 }

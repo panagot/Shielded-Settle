@@ -50,6 +50,9 @@ export function HomePage() {
             Settlement desk
             <ArrowRight size={16} weight="bold" />
           </Link>
+          <Link className="btn btn-ghost" to="/live">
+            Live Preprod
+          </Link>
           <a className="btn btn-ghost" href="/deck.html" target="_blank" rel="noreferrer">
             Slide deck
           </a>

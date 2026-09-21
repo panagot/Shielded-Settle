@@ -20,6 +20,7 @@ export function Footer() {
         <p className="foot-label">Pages</p>
         <Link to="/">Home</Link>
         <Link to="/desk">Desk</Link>
+        <Link to="/live">Live</Link>
         <Link to="/demo">Demo</Link>
         <Link to="/stats">Stats</Link>
         <Link to="/integrate">Integrate</Link>

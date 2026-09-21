@@ -1,13 +1,8 @@
-// Escrow Index — sample Compact contract
-// Language target: Compact 0.23+ / compiler 0.31.x
-//
-// Purpose: accept a shielded deposit, hold it as QualifiedShieldedCoinInfo,
-// then release or refund with sendShielded.
-//
-// IMPORTANT: circuits store the coin via writeCoin / ledger helpers.
-// Off-chain, callers must supply the real mtIndex when building witnesses
-// for a later sendShielded. Use the Escrow Index TypeScript kit to resolve
-// that index until Midnight ships a first-class API (servicedesk#187).
+# Shielded Settle — Compact escrow (language 0.23 / compiler 0.31.x)
+#
+# Hold a shielded deposit, then release or refund. Cross-transaction
+# sendShielded requires a real mtIndex — resolve off-chain with the kit
+# when firstFree returns 0 (servicedesk#187).
 
 pragma language_version 0.23;
 
@@ -28,22 +23,20 @@ constructor(dep: Bytes<32>, ben: Bytes<32>) {
 
 /**
  * Buyer deposits a shielded coin into the contract.
- * Off-chain: wait for commitment, then resolve mtIndex with Escrow Index.
+ * Off-chain: wait for commitment, then resolve mtIndex with Shielded Settle.
  */
 export circuit deposit(coin: ShieldedCoinInfo): [] {
   assert(funded == false, "already funded");
   assert(settled == false, "already settled");
 
   receiveShielded(disclose(coin));
-  // Persist with runtime-resolved index for *this* transaction.
-  // Cross-transaction spend still needs the real tree position off-chain.
   escrowVault = writeCoin(disclose(coin), right<ZswapCoinPublicKey, ContractAddress>(kernel.self()));
   funded = true;
 }
 
 /**
  * Release held funds to the beneficiary.
- * Witness must include QualifiedShieldedCoinInfo with a correct mtIndex.
+ * Witness must include QualifiedShieldedCoinInfo with a correct non-zero mtIndex.
  */
 export circuit release(
   coin: QualifiedShieldedCoinInfo,

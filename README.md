@@ -4,7 +4,9 @@ Recover the real Merkle index for **contract-owned shielded coins** on [Midnight
 
 > **One-liner (submission form):** Developer kit + settlement desk that recovers `mtIndex` when `firstFree` returns `0`, so Compact escrow can release or refund shielded deposits.
 
-**Live demo:** [https://shielded-settle.vercel.app/](https://shielded-settle.vercel.app/)
+**Live demo (sim desk):** [https://shielded-settle.vercel.app/](https://shielded-settle.vercel.app/)
+
+**Live Preprod (real Midnight txs):** open `/live` after Lace + local proof server (see below).
 
 ## The Midnight problem
 
@@ -31,7 +33,14 @@ That gap is tracked in [servicedesk#187](https://github.com/midnightntwrk/servic
 | **TypeScript kit** | `src/kit` — `resolveContractCoinMtIndex` + fund-safety guards |
 | **Demo UI** | Vite React desk that **simulates** the ledger so anyone can reproduce the bug and the fix without Lace or Preprod |
 
-The UI is an honest **simulated ledger**. It does not move mainnet or Preprod funds. The resolver in `src/kit` is what you wire into a live Compact dApp with an indexer and proof server.
+The UI ships two modes:
+
+| Mode | Route | Network |
+|---|---|---|
+| **Sim desk** | `/desk`, `/demo` | In-browser simulated ledger (no Lace) |
+| **Live Preprod** | `/live` | Real Midnight Preprod txs via Lace + local proof server |
+
+The TypeScript kit in `src/kit` is what both modes use to qualify `mtIndex` when `firstFree` returns `0`.
 
 ## How to run (judges)
 
@@ -42,19 +51,29 @@ npm test         # 31 fund-safety tests
 npm run dev      # http://localhost:5177
 ```
 
-**Demo click path (judges)**
+**Sim click path (no wallet)**
 
-1. Open `/` — click **Run example settle** (or use `/demo`)
+1. Open `/` — click **Run judge example** (or use `/demo`)
 2. Watch deposit → probe (`firstFree` = 0) → resolve → release
-3. Confirm `/stats` recorded the session
-4. Open `/gap` for the failure string and `#187` evidence
-5. Open `/integrate` for the copy-ready kit call
+3. Confirm `/stats`, `/gap`, `/integrate`
+
+**Live Preprod path (real chain)**
+
+Prerequisites: [Docker Desktop](https://docs.docker.com/desktop/), [Lace](https://chromewebstore.google.com/detail/lace/gafhhkghbfjjkeiendhlofajokpaflmk) on **Preprod** with proof server **Local (`http://localhost:6300`)**, tNIGHT from the [Preprod faucet](https://midnight-tmnight-preprod.nethermind.dev/), then **Generate tDUST** in Lace.
+
+```bash
+npm run compact:fetch
+npm run compact              # needs Docker on Windows (compactc image)
+npm run proof-server        # midnightntwrk/proof-server:8.0.3 on :6300
+npm run dev                 # open /live → Connect Lace
+```
 
 | Route | Purpose |
 |---|---|
-| `/` | Judge landing + one-click example |
-| `/desk` | Deploy → deposit → probe → resolve → settle |
-| `/demo` | Live example settle + video slot |
+| `/` | Judge landing + one-click sim example |
+| `/desk` | Simulated settlement desk |
+| `/live` | Lace + Preprod deploy / deposit / probe / release |
+| `/demo` | Sim example walkthrough + video slot |
 | `/stats` | Session KPIs from deals in this tab |
 | `/integrate` | Resolver snippet + acceptance checks |
 | `/gap` | Why `firstFree` lies |

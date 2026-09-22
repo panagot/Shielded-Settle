@@ -2,10 +2,10 @@ import { NavLink } from "react-router-dom";
 import { Tip } from "./Tip";
 
 const LINKS = [
-  { to: "/", label: "Home", tip: "Hackathon overview and one-click judge example." },
+  { to: "/", label: "Home", tip: "Preprod settle steps and hackathon overview." },
   { to: "/desk", label: "Desk", tip: "Run deposit, resolve, and settle on the simulated ledger." },
   { to: "/live", label: "Live", tip: "Real Preprod settle via Lace + local proof server (:6300)." },
-  { to: "/demo", label: "Demo", tip: "Live example settle plus video walkthrough." },
+  { to: "/demo", label: "Demo", tip: "One-click sim settle plus video walkthrough." },
   { to: "/stats", label: "Stats", tip: "Session KPIs for deals settled in this browser tab." },
   { to: "/integrate", label: "Integrate", tip: "TypeScript pattern for wiring the kit into a Compact dApp." },
   { to: "/gap", label: "Gap", tip: "Why firstFree returns 0, and servicedesk#187." },
@@ -15,7 +15,7 @@ const LINKS = [
 export function Navbar() {
   return (
     <nav className="navbar" aria-label="Primary">
-      <Tip content="Hackathon overview and one-click judge example." side="bottom">
+      <Tip content="Preprod settle steps and hackathon overview." side="bottom">
         <NavLink className="nav-brand" to="/" end>
           <span className="brand-mark" aria-hidden>
             <span />

@@ -36,7 +36,7 @@ const QUESTIONS = [
   {
     num: "05",
     ask: "How do I settle on real Preprod?",
-    answer: "Start the Docker proof server, fund Lace (or a CLI seed) with tNIGHT, Generate tDUST, then open /live or run npm run settle:preprod.",
+    answer: "Docker proof server on :6300. Fund Lace with tNIGHT via the Preprod faucet (mn_addr_preprod… only), Generate tDUST on the Midnight account card, then /live — or use npm run settle:preprod with a CLI seed.",
     to: "/live",
     label: "Open Live",
     file: "docs/HOW_TO_USE.md",

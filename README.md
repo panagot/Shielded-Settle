@@ -53,7 +53,7 @@ npm run dev      # http://localhost:5177
 
 ### Sim click path (no wallet)
 
-1. Open `/` — click **Run judge example** (or use `/demo`)
+1. Open `/` — **Practice on sim desk**, or `/demo` → **Run example release**
 2. Watch deposit → probe (`firstFree` = 0) → resolve → release
 3. Confirm `/stats`, `/gap`, `/integrate`
 
@@ -61,8 +61,8 @@ npm run dev      # http://localhost:5177
 
 Prerequisites: [Docker Desktop](https://docs.docker.com/desktop/), [Lace](https://chromewebstore.google.com/detail/lace/gafhhkghbfjjkeiendhlofajokpaflmk) on **Preprod** with proof server **Local (`http://localhost:6300`)**.
 
-1. Fund **Lace’s** Preprod unshielded address from the [Preprod faucet](https://midnight-tmnight-preprod.nethermind.dev/)
-2. In Lace: **Generate tDUST** (register NIGHT for dust)
+1. Copy Lace’s **unshielded** address (`mn_addr_preprod…` — not `mn_shield-…` / `mn_dust-…`) → [Preprod faucet](https://midnight-tmnight-preprod.nethermind.dev/) → wait for tNIGHT
+2. In Lace, open the **Midnight account card** → **Generate tDUST** (tDUST is generated from your tNIGHT; it is not swapped or transferable)
 3. Then:
 
 ```bash
@@ -71,6 +71,8 @@ npm run compact          # Docker Alpine + compactc 0.31
 npm run proof-server    # midnightntwrk/proof-server:8.1.0 on :6300
 npm run dev             # open /live → Connect Lace → Run full Preprod settle
 ```
+
+`/live` accepts Lace coin public keys as hex or Bech32m (`mn_shield-cpk_…`).
 
 ### Live Preprod CLI (seed wallet, no Lace)
 
@@ -148,8 +150,8 @@ if (!result.ok || !result.qualified) {
 ## Honest scope
 
 - **Sim desk** reproduces `#187` without Lace or Preprod — use it for fast judge review.
-- **`/live` and CLI settle** talk to real Midnight Preprod (indexer + node). They need Docker proof server `8.1.0`, tNIGHT, and tDUST.
-- Lace faucet funds and CLI seed funds are **separate wallets** — fund the address you will actually use.
+- **`/live` and CLI settle** talk to real Midnight Preprod (indexer + node). They need Docker proof server `8.1.0`, tNIGHT, and **tDUST** (Generate tDUST in Lace after funding — not a swap).
+- Lace faucet funds and CLI seed funds are **separate wallets** — fund the `mn_addr_preprod…` address you will actually connect.
 - Dump-parsing is a **temporary workaround**. Keep the kit API; swap the dump path for the official lookup when `#187` is fixed.
 - `npm run build` compiles the TypeScript app; Compact compile is `npm run compact` (Docker on Windows).
 

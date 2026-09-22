@@ -7,7 +7,7 @@ import { statusLabel } from "../sessionStats";
 
 const SCRIPT = [
   { time: "0:00", title: "Problem", body: "Show Gap: invalid index into sparse merkle tree: 0" },
-  { time: "0:25", title: "Example", body: "Click Run judge example on this page (or Home)." },
+  { time: "0:25", title: "Example", body: "Click Run example release on Demo, or Practice on sim desk from Home." },
   { time: "0:50", title: "Signals", body: "Coral firstFree = 0, mint qualified mtIndex, then Released." },
   { time: "1:20", title: "Stats", body: "Open Stats: probes, kit resolves, volume." },
   { time: "1:50", title: "Integrate", body: "Copy resolveContractCoinMtIndex." },

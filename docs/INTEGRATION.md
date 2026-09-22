@@ -35,7 +35,7 @@ On Preprod, this repo’s `/live` page and `npm run settle:preprod` already do s
 
 Escrow settlement still needs a proving path (Lace dApp connector, or HTTP proof-server + wallet balancing). This kit does not replace proving — it only fixes coin qualification.
 
-Fees on Midnight consume **tDUST**, which comes from registering tNIGHT (Lace **Generate tDUST**, or `npm run wallet:dust`).
+Fees on Midnight consume **tDUST**. On Preprod, designate your tNIGHT in Lace (**Generate tDUST** on the Midnight account card) or run `npm run wallet:dust` for a CLI seed. tDUST is non-transferable — there is no peer send or DEX swap.
 
 ## C. Suggested project layout
 

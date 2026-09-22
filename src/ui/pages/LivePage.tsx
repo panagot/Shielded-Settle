@@ -2,11 +2,58 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Plugs, Play, WarningCircle, ArrowRight } from "@phosphor-icons/react";
 import { createLaceProviders, isLaceAvailable, type LaceSession } from "../../midnight/laceProviders";
-import { LiveEscrowSession, hexKeyToBytes32, type LiveStepLog } from "../../midnight/LiveEscrowSession";
+import { LiveEscrowSession, coinPublicKeyToBytes, type LiveStepLog } from "../../midnight/LiveEscrowSession";
 import { makeDepositCoin } from "../../midnight/makeDepositCoin";
 import { PREPROD } from "../../midnight/config";
 
 type Busy = null | "connect" | "deploy" | "deposit" | "probe" | "release" | "refund" | "full";
+
+function friendlyError(err: unknown): string {
+  const msg = extractErrorMessage(err);
+  if (/Buffer is not defined/i.test(msg)) {
+    return "Browser Buffer polyfill missing — hard-refresh the page (Ctrl+Shift+R).";
+  }
+  if (/Network ID has not been configured/i.test(msg)) {
+    return "Network ID not set — hard-refresh /live, then reconnect Lace.";
+  }
+  if (/User rejected|user denied|cancelled/i.test(msg)) return "Transaction cancelled in Lace.";
+  if (/Failed to fetch|proof server|Failed Proof Server/i.test(msg)) {
+    return "Could not reach the proof server at http://127.0.0.1:6300. Run: npm run proof-server";
+  }
+  if (/no elements in sequence/i.test(msg)) {
+    return (
+      "Wallet has no spendable Preprod coins yet (empty UTXO set). " +
+      "In Lace: Network = Preprod → copy unshielded mn_addr_preprod… → faucet tNIGHT → wait until balance shows → Generate tDUST. " +
+      "CLI faucet wallets are separate from Lace."
+    );
+  }
+  if (/tDUST|dust|insufficient|could not balance dust/i.test(msg)) {
+    return (
+      "Need tDUST for fees (tNIGHT alone is not enough). In Lace, open the Midnight account card → Generate tDUST from your tNIGHT. tDUST cannot be swapped or sent from another wallet."
+    );
+  }
+  return msg || "Unexpected error — check the browser console.";
+}
+
+function extractErrorMessage(err: unknown): string {
+  if (!err) return "";
+  if (err instanceof Error && err.message) return err.message;
+  if (typeof err === "string") return err;
+  const anyErr = err as {
+    message?: string;
+    cause?: { message?: string; failure?: { message?: string; cause?: { message?: string } } };
+  };
+  if (anyErr.message) return anyErr.message;
+  const failure = anyErr.cause?.failure;
+  if (failure?.message) return failure.message;
+  if (failure?.cause?.message) return failure.cause.message;
+  if (anyErr.cause?.message) return anyErr.cause.message;
+  try {
+    return JSON.stringify(err);
+  } catch {
+    return String(err);
+  }
+}
 
 export function LivePage() {
   const [session, setSession] = useState<LaceSession | null>(null);
@@ -18,6 +65,7 @@ export function LivePage() {
   const [amountNight, setAmountNight] = useState("25");
   const [proofOk, setProofOk] = useState<boolean | null>(null);
   const [lacePresent, setLacePresent] = useState(false);
+  const [zkAssetsOk, setZkAssetsOk] = useState<boolean | null>(null);
 
   const refreshProof = useCallback(async (uri = PREPROD.proofServer) => {
     try {
@@ -30,32 +78,58 @@ export function LivePage() {
     }
   }, []);
 
+  const refreshZkAssets = useCallback(async () => {
+    try {
+      const base = `${window.location.origin}/managed/escrow`;
+      const checks = await Promise.all([
+        fetch(`${base}/keys/deposit.prover`, { method: "GET" }),
+        fetch(`${base}/zkir/deposit.bzkir`, { method: "GET" }),
+      ]);
+      const ok = checks.every((r) => r.ok && !(r.headers.get("content-type") ?? "").includes("text/html"));
+      setZkAssetsOk(ok);
+      return ok;
+    } catch {
+      setZkAssetsOk(false);
+      return false;
+    }
+  }, []);
+
   useEffect(() => {
     setLacePresent(isLaceAvailable());
     void refreshProof();
+    void refreshZkAssets();
     const id = window.setInterval(() => {
       setLacePresent(isLaceAvailable());
       void refreshProof(session?.proofServerUri ?? PREPROD.proofServer);
     }, 4000);
     return () => window.clearInterval(id);
-  }, [refreshProof, session?.proofServerUri]);
+  }, [refreshProof, refreshZkAssets, session?.proofServerUri]);
 
   async function connect() {
     setBusy("connect");
     setError(null);
     try {
+      if (typeof globalThis.Buffer === "undefined") {
+        throw new Error("Buffer is not defined");
+      }
       const ok = await refreshProof();
       if (!ok) {
         throw new Error(
           "Proof server not reachable at http://127.0.0.1:6300. Run: npm run proof-server (Docker must be running).",
         );
       }
+      const zkOk = await refreshZkAssets();
+      if (!zkOk) {
+        throw new Error("ZK keys missing under /managed/escrow. Run: npm run compact && npm run zk:copy");
+      }
+      // Smoke-test ledger Buffer usage before Lace prompts.
+      makeDepositCoin(1_000_000n);
       const lace = await createLaceProviders("preprod");
       setSession(lace);
       setLive(new LiveEscrowSession(lace.providers));
       await refreshProof(lace.proofServerUri);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(friendlyError(err));
     } finally {
       setBusy(null);
     }
@@ -74,12 +148,12 @@ export function LivePage() {
     try {
       const dep = partyKey(session.shieldedCoinPublicKey);
       const ben = beneficiaryHex.trim()
-        ? hexKeyToBytes32(stripKey(beneficiaryHex.trim()))
+        ? coinPublicKeyToBytes(stripKey(beneficiaryHex.trim()))
         : dep;
       await live.deploy(dep, ben);
       setLive(cloneLive(live));
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(friendlyError(err));
     } finally {
       setBusy(null);
     }
@@ -93,7 +167,7 @@ export function LivePage() {
       await live.join(joinAddress.trim());
       setLive(cloneLive(live));
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(friendlyError(err));
     } finally {
       setBusy(null);
     }
@@ -108,7 +182,7 @@ export function LivePage() {
       await live.deposit(made.kit, made.runtime);
       setLive(cloneLive(live));
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(friendlyError(err));
     } finally {
       setBusy(null);
     }
@@ -122,7 +196,7 @@ export function LivePage() {
       await live.probe();
       setLive(cloneLive(live));
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(friendlyError(err));
     } finally {
       setBusy(null);
     }
@@ -136,7 +210,7 @@ export function LivePage() {
       await live.release(partyKey(session.shieldedCoinPublicKey));
       setLive(cloneLive(live));
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(friendlyError(err));
     } finally {
       setBusy(null);
     }
@@ -150,7 +224,7 @@ export function LivePage() {
       await live.refund(partyKey(session.shieldedCoinPublicKey));
       setLive(cloneLive(live));
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(friendlyError(err));
     } finally {
       setBusy(null);
     }
@@ -165,7 +239,7 @@ export function LivePage() {
       if (!live.contractAddress) {
         const dep = partyKey(session.shieldedCoinPublicKey);
         const ben = beneficiaryHex.trim()
-          ? hexKeyToBytes32(stripKey(beneficiaryHex.trim()))
+          ? coinPublicKeyToBytes(stripKey(beneficiaryHex.trim()))
           : dep;
         await live.deploy(dep, ben);
       }
@@ -178,7 +252,7 @@ export function LivePage() {
       await live.release(partyKey(session.shieldedCoinPublicKey));
       setLive(cloneLive(live));
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(friendlyError(err));
       setLive(live ? cloneLive(live) : null);
     } finally {
       setBusy(null);
@@ -206,17 +280,28 @@ export function LivePage() {
           </strong>
         </p>
         <p>
+          ZK assets:{" "}
+          <strong className={zkAssetsOk ? "accent" : zkAssetsOk === false ? "danger" : undefined}>
+            {zkAssetsOk === null
+              ? "checking…"
+              : zkAssetsOk
+                ? "keys + zkir ready"
+                : "missing — npm run compact && npm run zk:copy"}
+          </strong>
+        </p>
+        <p>
           Lace extension:{" "}
           <strong className={lacePresent ? "accent" : "danger"}>
             {lacePresent ? "detected" : "not detected — install Lace and reload"}
           </strong>
         </p>
         <p>
-          Network: Preprod · Faucet:{" "}
+          Network: Preprod · Faucet needs <strong>mn_addr_preprod…</strong> (unshielded) —{" "}
           <a href={PREPROD.faucet} target="_blank" rel="noreferrer">
-            tNIGHT
-          </a>{" "}
-          into <strong>this Lace wallet</strong>, then Generate tDUST in Lace (CLI faucet funds a separate seed).
+            request tNIGHT
+          </a>
+          . Then Midnight account card → <strong>Generate tDUST</strong> (not a swap; tDUST is
+          non-transferable). CLI faucet seeds are a different wallet.
         </p>
         <p>
           Lace settings: Network <strong>Preprod</strong>, Proof server{" "}
@@ -251,22 +336,17 @@ export function LivePage() {
           </label>
 
           <label className="field-label">
-            Beneficiary coin public key (hex, 32 bytes) — blank = self
+            Beneficiary coin public key — blank = self
             <input
               className="field"
               value={beneficiaryHex}
               onChange={(e) => setBeneficiaryHex(e.target.value)}
-              placeholder="optional · defaults to your coinPk"
+              placeholder="64 hex chars or mn_shield-cpk_preprod…"
             />
           </label>
 
           <div className="demo-controls">
-            <button
-              type="button"
-              className="btn btn-accent"
-              disabled={!!busy}
-              onClick={runFullRelease}
-            >
+            <button type="button" className="btn btn-accent" disabled={!!busy} onClick={runFullRelease}>
               <Play size={16} weight="fill" />
               {busy === "full" ? "Running full settle…" : "Run full Preprod settle"}
             </button>
@@ -339,9 +419,7 @@ export function LivePage() {
           </div>
           <div>
             <dt>Kit mtIndex</dt>
-            <dd className="mono accent">
-              {live.lastQualified ? String(live.lastQualified.mtIndex) : "—"}
-            </dd>
+            <dd className="mono accent">{live.lastQualified ? String(live.lastQualified.mtIndex) : "—"}</dd>
           </div>
         </dl>
       )}
@@ -385,13 +463,7 @@ function stripKey(v: string): string {
   return v.replace(/^0x/, "");
 }
 
-/** Accept hex coinPk or bech32-ish strings that embed 32-byte hex. */
+/** Accept 64-char hex or Lace Bech32m (`mn_shield-cpk_…` / `mn_shield-addr_…`). */
 function partyKey(raw: string): Uint8Array {
-  const s = stripKey(raw);
-  if (/^[0-9a-fA-F]{64}$/.test(s)) return hexKeyToBytes32(s);
-  const match = s.match(/[0-9a-fA-F]{64}/);
-  if (match) return hexKeyToBytes32(match[0]);
-  throw new Error(
-    "Wallet coin public key is not 32-byte hex. Paste beneficiary as 64 hex chars, or check Lace connector version.",
-  );
+  return coinPublicKeyToBytes(raw);
 }

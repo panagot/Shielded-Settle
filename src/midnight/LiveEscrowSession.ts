@@ -5,6 +5,19 @@ import type { QualifiedShieldedCoinInfo, ShieldedCoinInfo } from "@kit/types";
 import type { EscrowProviders, EscrowPrivateState } from "./laceProviders";
 import { escrowPrivateStateKey } from "./laceProviders";
 
+export {
+  coinPublicKeyToBytes,
+  coinPublicKeyToHex,
+  hexKeyToBytes32,
+} from "./coinKey";
+
+function hexToBytes(hex: string): Uint8Array {
+  const h = hex.replace(/^0x/, "");
+  const out = new Uint8Array(h.length / 2);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(h.slice(i * 2, i * 2 + 2), 16);
+  return out;
+}
+
 export type LiveStepLog = {
   at: number;
   kind: string;
@@ -174,19 +187,4 @@ export class LiveEscrowSession {
     this.log("refund", "sendShielded → depositor", "ok", txId);
     return txId;
   }
-}
-
-function hexToBytes(hex: string): Uint8Array {
-  const h = hex.replace(/^0x/, "");
-  const out = new Uint8Array(h.length / 2);
-  for (let i = 0; i < out.length; i++) out[i] = parseInt(h.slice(i * 2, i * 2 + 2), 16);
-  return out;
-}
-
-export function hexKeyToBytes32(hex: string): Uint8Array {
-  const h = hex.replace(/^0x/, "");
-  if (!/^[0-9a-fA-F]{64}$/.test(h)) {
-    throw new Error("Expected 32-byte hex coin public key (64 hex chars).");
-  }
-  return hexToBytes(h);
 }

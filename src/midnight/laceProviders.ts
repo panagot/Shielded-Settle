@@ -24,8 +24,10 @@ import {
 } from "@midnight-ntwrk/midnight-js-protocol/ledger";
 import { fromHex, toHex } from "@midnight-ntwrk/midnight-js-protocol/compact-runtime";
 import type { UnboundTransaction, MidnightProviders } from "@midnight-ntwrk/midnight-js-types";
+import { setNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
 import { inMemoryPrivateStateProvider } from "./inMemoryPrivateState";
 import { networkConfig, type MidnightNetworkId } from "./config";
+import { coinPublicKeyToHex, encryptionPublicKeyToHex } from "./coinKey";
 
 const COMPATIBLE_CONNECTOR_API_VERSION = "4.x";
 
@@ -108,6 +110,8 @@ export function connectLace(networkId: MidnightNetworkId): Promise<LaceConnected
 export async function createLaceProviders(
   networkId: MidnightNetworkId = "preprod",
 ): Promise<LaceSession> {
+  // Midnight.js ledger/runtime require a global network id before any wallet/contract ops.
+  setNetworkId(networkId);
   const connectedAPI = await connectLace(networkId);
   const cfg = await connectedAPI.getConfiguration();
   const net = networkConfig(networkId);
@@ -122,6 +126,9 @@ export async function createLaceProviders(
     EscrowPrivateState
   >();
   const shielded = await connectedAPI.getShieldedAddresses();
+  // Midnight.js walletProvider expects hex; Lace often returns Bech32m.
+  const coinPkHex = coinPublicKeyToHex(shielded.shieldedCoinPublicKey as string);
+  const encPkHex = encryptionPublicKeyToHex(shielded.shieldedEncryptionPublicKey as string);
 
   const providers: EscrowProviders = {
     privateStateProvider,
@@ -133,10 +140,10 @@ export async function createLaceProviders(
     ),
     walletProvider: {
       getCoinPublicKey(): string {
-        return shielded.shieldedCoinPublicKey as string;
+        return coinPkHex;
       },
       getEncryptionPublicKey(): string {
-        return shielded.shieldedEncryptionPublicKey as string;
+        return encPkHex;
       },
       balanceTx: async (tx: UnboundTransaction, ttl?: Date): Promise<FinalizedTransaction> => {
         void ttl;
@@ -163,8 +170,8 @@ export async function createLaceProviders(
     connectedAPI,
     providers,
     networkId,
-    shieldedCoinPublicKey: shielded.shieldedCoinPublicKey as string,
-    shieldedEncryptionPublicKey: shielded.shieldedEncryptionPublicKey as string,
+    shieldedCoinPublicKey: coinPkHex,
+    shieldedEncryptionPublicKey: encPkHex,
     proofServerUri,
   };
 }

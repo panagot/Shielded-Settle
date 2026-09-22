@@ -7,7 +7,7 @@ const ACTIONS = [
   {
     n: "01",
     title: "Fund your Lace wallet",
-    body: "Open Lace on Preprod, copy your unshielded address, request tNIGHT from the faucet.",
+    body: "Lace → Preprod → copy your unshielded address (mn_addr_preprod…). Paste it in the faucet — not shield or dust addresses.",
     href: PREPROD.faucet,
     external: true,
     label: "Open faucet",
@@ -15,14 +15,14 @@ const ACTIONS = [
   {
     n: "02",
     title: "Generate tDUST",
-    body: "In Lace: Generate tDUST so fees can be paid. Point proof server to Local (http://localhost:6300).",
+    body: "tDUST is not swapped or sent. On the Midnight account card in Lace, click Generate tDUST (from your tNIGHT). Set proof server to Local (http://localhost:6300).",
     to: "/live",
     label: "Open Live checklist",
   },
   {
     n: "03",
     title: "Create the escrow",
-    body: "Connect Lace on /live, then deploy. Depositor and beneficiary default to your coin public key.",
+    body: "Connect Lace on /live, then deploy. Depositor and beneficiary default to your coin public key (hex or mn_shield-cpk Bech32).",
     to: "/live",
     label: "Deploy on Preprod",
   },

@@ -19,3 +19,5 @@ DESIGN.md
 
 # Compact toolchain cache (fetched binaries)
 node_modules/@midnight-ntwrk/midnight-js-compact/managed
+tools/compactc-0.31.0
+tools/*.zip

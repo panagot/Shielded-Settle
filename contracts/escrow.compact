@@ -1,8 +1,8 @@
-# Shielded Settle — Compact escrow (language 0.23 / compiler 0.31.x)
-#
-# Hold a shielded deposit, then release or refund. Cross-transaction
-# sendShielded requires a real mtIndex — resolve off-chain with the kit
-# when firstFree returns 0 (servicedesk#187).
+// Shielded Settle — Compact escrow (language 0.23 / compiler 0.31.x)
+//
+// Hold a shielded deposit, then release or refund. Cross-transaction
+// sendShielded requires a real mtIndex — resolve off-chain with the kit
+// when firstFree returns 0 (servicedesk#187).
 
 pragma language_version 0.23;
 
@@ -10,34 +10,33 @@ import CompactStandardLibrary;
 
 export ledger depositor: Bytes<32>;
 export ledger beneficiary: Bytes<32>;
-export ledger escrowVault: Opaque<"QualifiedShieldedCoinInfo">;
+export ledger escrowVault: QualifiedShieldedCoinInfo;
 export ledger funded: Boolean;
 export ledger settled: Boolean;
 
 constructor(dep: Bytes<32>, ben: Bytes<32>) {
-  depositor = dep;
-  beneficiary = ben;
+  depositor = disclose(dep);
+  beneficiary = disclose(ben);
   funded = false;
   settled = false;
 }
 
-/**
- * Buyer deposits a shielded coin into the contract.
- * Off-chain: wait for commitment, then resolve mtIndex with Shielded Settle.
- */
+// Buyer deposits a shielded coin into the contract.
+// Off-chain: wait for commitment, then resolve mtIndex with Shielded Settle.
 export circuit deposit(coin: ShieldedCoinInfo): [] {
   assert(funded == false, "already funded");
   assert(settled == false, "already settled");
 
   receiveShielded(disclose(coin));
-  escrowVault = writeCoin(disclose(coin), right<ZswapCoinPublicKey, ContractAddress>(kernel.self()));
+  escrowVault.writeCoin(
+    disclose(coin),
+    right<ZswapCoinPublicKey, ContractAddress>(kernel.self()),
+  );
   funded = true;
 }
 
-/**
- * Release held funds to the beneficiary.
- * Witness must include QualifiedShieldedCoinInfo with a correct non-zero mtIndex.
- */
+// Release held funds to the beneficiary.
+// Witness must include QualifiedShieldedCoinInfo with a correct non-zero mt_index.
 export circuit release(
   coin: QualifiedShieldedCoinInfo,
   caller: Bytes<32>,
@@ -58,9 +57,7 @@ export circuit release(
   return result;
 }
 
-/**
- * Refund held funds to the original depositor.
- */
+// Refund held funds to the original depositor.
 export circuit refund(
   coin: QualifiedShieldedCoinInfo,
   caller: Bytes<32>,

@@ -11,8 +11,8 @@
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
     "test:watch": "vitest",
-    "compact:fetch": "cross-env COMPACTC_VERSION=0.31.0 fetch-compactc --version=0.31.0",
-    "compact": "cross-env COMPACTC_VERSION=0.31.0 run-compactc ./contracts/escrow.compact ./contracts/managed/escrow && node scripts/copy-zk-assets.mjs",
+    "compact:fetch": "node scripts/fetch-compactc-linux.mjs",
+    "compact": "node scripts/compact-docker.mjs && node scripts/copy-zk-assets.mjs",
     "zk:copy": "node scripts/copy-zk-assets.mjs",
     "proof-server": "docker compose -f proof-server-local.yml up -d",
     "proof-server:down": "docker compose -f proof-server-local.yml down"

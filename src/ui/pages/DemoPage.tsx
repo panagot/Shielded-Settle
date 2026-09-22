@@ -6,12 +6,12 @@ import { useSession } from "../session";
 import { statusLabel } from "../sessionStats";
 
 const SCRIPT = [
-  { time: "0:00", title: "Problem", body: "Show Gap: invalid index into sparse merkle tree: 0" },
-  { time: "0:25", title: "Example", body: "Click Run example release on Demo, or Practice on sim desk from Home." },
-  { time: "0:50", title: "Signals", body: "Coral firstFree = 0, mint qualified mtIndex, then Released." },
-  { time: "1:20", title: "Stats", body: "Open Stats: probes, kit resolves, volume." },
-  { time: "1:50", title: "Integrate", body: "Copy resolveContractCoinMtIndex." },
-  { time: "2:20", title: "Scope", body: "Sim ledger for review; kit + Compact for live dApps." },
+  { time: "0:00", title: "Problem", body: "Open Gap: invalid index into sparse merkle tree: 0 (#187)." },
+  { time: "0:25", title: "Sim settle", body: "Demo → Run example release. Watch the step rail." },
+  { time: "0:50", title: "Signals", body: "Coral firstFree = 0 → mint qualified mtIndex → Released." },
+  { time: "1:20", title: "Stats", body: "Open Stats: probes, kit resolves, volume (this tab only)." },
+  { time: "1:50", title: "Integrate", body: "Copy resolveContractCoinMtIndex into your Compact flow." },
+  { time: "2:20", title: "Scope", body: "Say clearly: sim for review; kit + Compact (+ optional /live) for builders." },
 ];
 
 export function DemoPage() {
@@ -27,8 +27,13 @@ export function DemoPage() {
           <h1>Demo</h1>
         </div>
         <p className="lede">
-          Judges can run a full settle here in one click. Record the same path as an unlisted
-          YouTube video and paste the link into <code>src/ui/demoVideo.ts</code>.
+          One-click sim settle for reviewers (no wallet). Expect <code>firstFree = 0</code>, then a
+          non-zero kit <code>mtIndex</code>, then Released. Optional: record the same path to
+          YouTube and set <code>src/ui/demoVideo.ts</code>. Full judge script:{" "}
+          <a href="https://github.com/panagot/Shielded-Settle/blob/main/docs/WALKTHROUGH.md">
+            WALKTHROUGH.md
+          </a>
+          .
         </p>
       </header>
 

@@ -12,7 +12,8 @@ export function Footer() {
         <strong>Shielded Settle</strong>
         <p>
           Recover the real Merkle index for contract-owned shielded coins, then spend them.
-          Sim desk for review; <Link to="/live">Live</Link> for Preprod with Lace.
+          Reviewers: start on <Link to="/demo">Demo</Link>. Optional{" "}
+          <Link to="/live">Live</Link> Preprod with Lace.
         </p>
       </div>
 
@@ -44,6 +45,7 @@ export function Footer() {
             Midnight forum
           </a>
         </Tip>
+        <span className="mono">docs/WALKTHROUGH.md</span>
         <span className="mono">docs/HOW_TO_USE.md</span>
         <span className="mono">docs/INTEGRATION.md</span>
       </div>

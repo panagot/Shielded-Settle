@@ -1,13 +1,37 @@
-import { ArrowRight, Wallet, TreeStructure, ShieldCheck } from "@phosphor-icons/react";
+import { ArrowRight, Wallet, TreeStructure, ShieldCheck, Play } from "@phosphor-icons/react";
 import { Link } from "react-router-dom";
 import { PREPROD } from "../../midnight/config";
 import { useSession } from "../session";
 
-const ACTIONS = [
+const REVIEWER = [
   {
     n: "01",
-    title: "Fund your Lace wallet",
-    body: "Lace → Preprod → copy your unshielded address (mn_addr_preprod…). Paste it in the faucet — not shield or dust addresses.",
+    title: "Run the sim settle",
+    body: "No wallet. One click shows firstFree = 0, kit recovery, then release.",
+    to: "/demo",
+    label: "Open Demo",
+  },
+  {
+    n: "02",
+    title: "Read the gap",
+    body: "Why the public index lies for contract-owned shielded coins (servicedesk#187).",
+    to: "/gap",
+    label: "Open Gap",
+  },
+  {
+    n: "03",
+    title: "Copy the kit call",
+    body: "Same resolveContractCoinMtIndex the desk uses — ready for your Compact dApp.",
+    to: "/integrate",
+    label: "Open Integrate",
+  },
+];
+
+const LIVE_ACTIONS = [
+  {
+    n: "01",
+    title: "Fund Lace (Preprod)",
+    body: "Copy unshielded mn_addr_preprod… into the faucet — not shield or dust addresses.",
     href: PREPROD.faucet,
     external: true,
     label: "Open faucet",
@@ -15,23 +39,16 @@ const ACTIONS = [
   {
     n: "02",
     title: "Generate tDUST",
-    body: "tDUST is not swapped or sent. On the Midnight account card in Lace, click Generate tDUST (from your tNIGHT). Set proof server to Local (http://localhost:6300).",
+    body: "On the Midnight account card in Lace, Generate tDUST from your tNIGHT. Set proof server to Local (:6300).",
     to: "/live",
-    label: "Open Live checklist",
+    label: "Live checklist",
   },
   {
     n: "03",
-    title: "Create the escrow",
-    body: "Connect Lace on /live, then deploy. Depositor and beneficiary default to your coin public key (hex or mn_shield-cpk Bech32).",
+    title: "Settle on Preprod",
+    body: "Connect Lace → Run full Preprod settle (deploy → deposit → kit → release).",
     to: "/live",
-    label: "Deploy on Preprod",
-  },
-  {
-    n: "04",
-    title: "Deposit and settle",
-    body: "Fund a shielded deposit, probe firstFree (expect 0), let the kit recover mtIndex, then release.",
-    to: "/live",
-    label: "Run full settle",
+    label: "Open Live",
   },
 ];
 
@@ -41,38 +58,42 @@ export function HomePage() {
   return (
     <section className="home">
       <header className="home-hero">
-        <p className="eyebrow">Midnight Preprod · real txs</p>
+        <p className="eyebrow">Midnight · Korea Hackathon</p>
         <h1>Shielded Settle</h1>
         <p className="home-tag">
-          Create a shielded escrow, deposit coins, recover the real <code>mtIndex</code>, and
-          release — on live Preprod.
+          Recover the real <code>mtIndex</code> when <code>firstFree</code> returns 0 — then release
+          shielded escrow. Sim desk for reviewers; optional Live Preprod with Lace.
         </p>
         <div className="home-actions">
-          <Link className="btn btn-accent" to="/live">
-            <Wallet size={18} weight="bold" />
-            Start live settle
+          <Link className="btn btn-accent" to="/demo">
+            <Play size={18} weight="fill" />
+            Reviewer: run sim settle
           </Link>
-          <Link className="btn btn-line" to="/desk">
-            Practice on sim desk
+          <Link className="btn btn-line" to="/live">
+            <Wallet size={18} weight="bold" />
+            Live Preprod
             <ArrowRight size={16} weight="bold" />
           </Link>
         </div>
         <p className="home-note">
-          Needs Lace (Preprod) + Docker proof server. Sim desk is optional for reviewers without a
-          wallet.
+          Judges: start on Demo (no wallet). Live needs Lace + Docker proof server + tDUST.
           {stats.dealsSettled > 0
             ? ` This tab has settled ${stats.dealsSettled} deal${stats.dealsSettled === 1 ? "" : "s"}.`
-            : null}
+            : null}{" "}
+          Full script: <Link to="/docs">Docs</Link> ·{" "}
+          <a href="https://github.com/panagot/Shielded-Settle/blob/main/docs/WALKTHROUGH.md">
+            WALKTHROUGH.md
+          </a>
         </p>
       </header>
 
-      <section className="home-actions-block" aria-labelledby="home-actions-heading">
+      <section className="home-actions-block" aria-labelledby="reviewer-heading">
         <div className="home-actions-head">
-          <h2 id="home-actions-heading">Take action</h2>
-          <p>Four steps from empty Lace to a settled Preprod escrow.</p>
+          <h2 id="reviewer-heading">For reviewers (no wallet)</h2>
+          <p>Three stops. Expect coral firstFree = 0, then a mint qualified mtIndex.</p>
         </div>
         <ol className="home-action-list">
-          {ACTIONS.map((step) => (
+          {REVIEWER.map((step) => (
             <li key={step.n}>
               <span className="home-action-n" aria-hidden>
                 {step.n}
@@ -80,17 +101,10 @@ export function HomePage() {
               <div>
                 <h3>{step.title}</h3>
                 <p>{step.body}</p>
-                {step.external && step.href ? (
-                  <a href={step.href} target="_blank" rel="noreferrer">
-                    {step.label}
-                    <ArrowRight size={14} weight="bold" />
-                  </a>
-                ) : (
-                  <Link to={step.to!}>
-                    {step.label}
-                    <ArrowRight size={14} weight="bold" />
-                  </Link>
-                )}
+                <Link to={step.to}>
+                  {step.label}
+                  <ArrowRight size={14} weight="bold" />
+                </Link>
               </div>
             </li>
           ))}
@@ -120,9 +134,40 @@ export function HomePage() {
         <div className="signal-cell signal-gap">
           <dt>Then</dt>
           <dd>Release</dd>
-          <small>Once, on Preprod</small>
+          <small>Spend succeeds</small>
         </div>
       </dl>
+
+      <section className="home-actions-block" aria-labelledby="live-heading">
+        <div className="home-actions-head">
+          <h2 id="live-heading">Optional: Live Preprod</h2>
+          <p>Real chain txs. Requires Lace, faucet tNIGHT, Generate tDUST, local proof server.</p>
+        </div>
+        <ol className="home-action-list">
+          {LIVE_ACTIONS.map((step) => (
+            <li key={step.n}>
+              <span className="home-action-n" aria-hidden>
+                {step.n}
+              </span>
+              <div>
+                <h3>{step.title}</h3>
+                <p>{step.body}</p>
+                {step.external && step.href ? (
+                  <a href={step.href} target="_blank" rel="noreferrer">
+                    {step.label}
+                    <ArrowRight size={14} weight="bold" />
+                  </a>
+                ) : (
+                  <Link to={step.to!}>
+                    {step.label}
+                    <ArrowRight size={14} weight="bold" />
+                  </Link>
+                )}
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
 
       <div className="home-pillars">
         <article className="home-pillar">
@@ -148,8 +193,8 @@ export function HomePage() {
           </Link>
         </article>
         <article className="home-pillar">
-          <h2>No Lace yet?</h2>
-          <p>Run the full deposit → probe → resolve → release path on the simulated ledger.</p>
+          <h2>Hands-on desk</h2>
+          <p>Step through deploy → deposit → probe → resolve → release on the simulated ledger.</p>
           <Link to="/desk">
             Open sim desk
             <ArrowRight size={14} weight="bold" />

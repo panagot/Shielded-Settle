@@ -98,4 +98,5 @@ Compile with `npm run compact` (Compact 0.31.x / language 0.23+), or your own Mi
 
 ## 7. Next step after the demo
 
-Follow [INTEGRATION.md](./INTEGRATION.md) to wire the kit into your own indexer + proof stack.
+- Judges: [WALKTHROUGH.md](./WALKTHROUGH.md)
+- Builders: [INTEGRATION.md](./INTEGRATION.md)

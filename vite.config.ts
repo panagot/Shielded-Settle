@@ -1,17 +1,17 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import wasm from "vite-plugin-wasm";
-import topLevelAwait from "vite-plugin-top-level-await";
 import { fileURLToPath, URL } from "node:url";
 
+/**
+ * Browser build for the settlement desk + Lace Preprod path.
+ * Buffer is polyfilled in src/polyfills.ts (must load first from main.tsx).
+ * target esnext: Midnight WASM / compact-runtime use top-level await natively.
+ */
 export default defineConfig({
   plugins: [
     react(),
     wasm(),
-    topLevelAwait({
-      promiseExportName: "__tla",
-      promiseImportName: (i) => `__tla_${i}`,
-    }),
     {
       name: "wasm-module-resolver",
       resolveId(source, importer) {
@@ -49,7 +49,7 @@ export default defineConfig({
         global: "globalThis",
       },
     },
-    include: ["buffer", "@midnight-ntwrk/compact-runtime"],
+    include: ["buffer"],
     exclude: [
       "@midnight-ntwrk/onchain-runtime-v3",
       "@midnight-ntwrk/midnight-js-protocol",
@@ -64,13 +64,6 @@ export default defineConfig({
       transformMixedEsModules: true,
       extensions: [".js", ".cjs"],
       ignoreDynamicRequires: true,
-    },
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          wasm: ["@midnight-ntwrk/onchain-runtime-v3"],
-        },
-      },
     },
   },
   server: {

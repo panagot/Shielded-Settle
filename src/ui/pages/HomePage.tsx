@@ -17,9 +17,9 @@ const PILLARS = [
   },
   {
     title: "The desk",
-    body: "An honest simulated ledger so judges can reproduce the lie, the fix, and a full release without Lace.",
-    to: "/desk",
-    label: "Open the desk",
+    body: "Sim ledger for judges without Lace — plus /live for real Preprod deposits and releases.",
+    to: "/live",
+    label: "Open Live Preprod",
   },
 ];
 
@@ -58,7 +58,8 @@ export function HomePage() {
           </a>
         </div>
         <p className="home-note">
-          Simulated ledger for review. Compact sample + TypeScript kit for live Compact dApps.
+          Sim desk for instant review. <Link to="/live">Live Preprod</Link> for real Midnight txs
+          (Lace + local proof server). Compact sample + TypeScript kit for your own Compact dApp.
           {stats.dealsSettled > 0
             ? ` This tab has settled ${stats.dealsSettled} deal${stats.dealsSettled === 1 ? "" : "s"}.`
             : null}

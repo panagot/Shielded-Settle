@@ -4,9 +4,9 @@ Recover the real Merkle index for **contract-owned shielded coins** on [Midnight
 
 > **One-liner (submission form):** Developer kit + settlement desk that recovers `mtIndex` when `firstFree` returns `0`, so Compact escrow can release or refund shielded deposits.
 
-**Live demo (sim desk):** [https://shielded-settle.vercel.app/](https://shielded-settle.vercel.app/)
+**Live demo:** [https://shielded-settle.vercel.app/](https://shielded-settle.vercel.app/) · sim desk on `/` · real Preprod on `/live`
 
-**Live Preprod (real Midnight txs):** open `/live` after Lace + local proof server (see below).
+**GitHub:** [panagot/Shielded-Settle](https://github.com/panagot/Shielded-Settle)
 
 ## The Midnight problem
 
@@ -23,7 +23,7 @@ Proof submission then fails with:
 invalid index into sparse merkle tree: 0
 ```
 
-That gap is tracked in [servicedesk#187](https://github.com/midnightntwrk/servicedesk/issues/187). Shielded Settle packages the community workaround into a TypeScript kit and a settlement desk you can demo in the browser.
+That gap is tracked in [servicedesk#187](https://github.com/midnightntwrk/servicedesk/issues/187). Shielded Settle packages the community workaround into a TypeScript kit and a settlement desk you can demo in the browser — plus a **Live Preprod** path for real Midnight transactions.
 
 ## What this repo is
 
@@ -31,42 +31,58 @@ That gap is tracked in [servicedesk#187](https://github.com/midnightntwrk/servic
 |---|---|
 | **Compact sample** | `contracts/escrow.compact` — shielded `deposit` / `release` / `refund` |
 | **TypeScript kit** | `src/kit` — `resolveContractCoinMtIndex` + fund-safety guards |
-| **Demo UI** | Vite React desk that **simulates** the ledger so anyone can reproduce the bug and the fix without Lace or Preprod |
+| **Sim desk** | Vite React UI that reproduces `#187` without a wallet |
+| **Live Preprod** | `/live` via Lace, or CLI scripts with a seed wallet + local proof server |
 
-The UI ships two modes:
-
-| Mode | Route | Network |
+| Mode | Route / command | Network |
 |---|---|---|
-| **Sim desk** | `/desk`, `/demo` | In-browser simulated ledger (no Lace) |
-| **Live Preprod** | `/live` | Real Midnight Preprod txs via Lace + local proof server |
+| **Sim desk** | `/desk`, `/demo` | In-browser simulated ledger |
+| **Live (Lace)** | `/live` | Real Preprod txs (Lace + Docker proof server) |
+| **Live (CLI)** | `npm run settle:preprod` | Real Preprod txs (seed wallet, no browser) |
 
-The TypeScript kit in `src/kit` is what both modes use to qualify `mtIndex` when `firstFree` returns `0`.
+The TypeScript kit in `src/kit` is what every mode uses to qualify `mtIndex` when `firstFree` returns `0`.
 
 ## How to run (judges)
 
 ```bash
 npm install
-npm run build    # compiles; required check
-npm test         # 31 fund-safety tests
+npm run build    # TypeScript + Vite production build
+npm test         # fund-safety tests
 npm run dev      # http://localhost:5177
 ```
 
-**Sim click path (no wallet)**
+### Sim click path (no wallet)
 
 1. Open `/` — click **Run judge example** (or use `/demo`)
 2. Watch deposit → probe (`firstFree` = 0) → resolve → release
 3. Confirm `/stats`, `/gap`, `/integrate`
 
-**Live Preprod path (real chain)**
+### Live Preprod with Lace
 
-Prerequisites: [Docker Desktop](https://docs.docker.com/desktop/), [Lace](https://chromewebstore.google.com/detail/lace/gafhhkghbfjjkeiendhlofajokpaflmk) on **Preprod** with proof server **Local (`http://localhost:6300`)**, tNIGHT from the [Preprod faucet](https://midnight-tmnight-preprod.nethermind.dev/), then **Generate tDUST** in Lace.
+Prerequisites: [Docker Desktop](https://docs.docker.com/desktop/), [Lace](https://chromewebstore.google.com/detail/lace/gafhhkghbfjjkeiendhlofajokpaflmk) on **Preprod** with proof server **Local (`http://localhost:6300`)**.
+
+1. Fund **Lace’s** Preprod unshielded address from the [Preprod faucet](https://midnight-tmnight-preprod.nethermind.dev/)
+2. In Lace: **Generate tDUST** (register NIGHT for dust)
+3. Then:
 
 ```bash
-npm run compact:fetch
-npm run compact              # needs Docker on Windows (compactc image)
-npm run proof-server        # midnightntwrk/proof-server:8.0.3 on :6300
-npm run dev                 # open /live → Connect Lace
+npm run compact:fetch   # once
+npm run compact          # Docker Alpine + compactc 0.31
+npm run proof-server    # midnightntwrk/proof-server:8.1.0 on :6300
+npm run dev             # open /live → Connect Lace → Run full Preprod settle
 ```
+
+### Live Preprod CLI (seed wallet, no Lace)
+
+```bash
+npm run proof-server
+npm run wallet:preprod:faucet   # print seed + faucet address (or fund that address)
+npm run wallet:sync             # confirm tNIGHT balance
+npm run wallet:dust             # sync + register NIGHT → tDUST (dust tree catch-up can take a while)
+npm run settle:preprod          # deploy → deposit → kit probe → release
+```
+
+Artifacts stay under `.wallet/` (gitignored): `preprod-test-wallet.json`, `sync-status.json`, `last-settle.json`.
 
 | Route | Purpose |
 |---|---|
@@ -74,7 +90,7 @@ npm run dev                 # open /live → Connect Lace
 | `/desk` | Simulated settlement desk |
 | `/live` | Lace + Preprod deploy / deposit / probe / release |
 | `/demo` | Sim example walkthrough + video slot |
-| `/stats` | Session KPIs from deals in this tab |
+| `/stats` | Session KPIs for deals settled in this browser tab |
 | `/integrate` | Resolver snippet + acceptance checks |
 | `/gap` | Why `firstFree` lies |
 | `/docs` | Kit docs index |
@@ -122,16 +138,20 @@ if (!result.ok || !result.qualified) {
 | Path | Purpose |
 |---|---|
 | `src/kit/` | Resolver + escrow flow engine + tests |
-| `src/ui/` | Settlement desk (React + Vite) |
-| `contracts/escrow.compact` | Sample Compact escrow |
+| `src/ui/` | Settlement desk + `/live` Preprod page |
+| `src/midnight/` | Lace providers, live session, deposit coin helper |
+| `contracts/escrow.compact` | Sample Compact escrow (+ compiled ZK assets) |
+| `scripts/` | Compact compile, wallet, dust, CLI settle |
 | `docs/` | How to use, gap notes, integration, deck PDF |
 | `public/deck.html` | Printable slide deck |
 
-## Honest scope (read this)
+## Honest scope
 
-- **Demo UI ≠ live Midnight node.** It reproduces `#187` locally so review does not require Lace, Docker proof server, or Preprod faucet.
-- **Compact sample** compiles with your Midnight Compact toolchain (language 0.23+ / compiler 0.31.x family). Adjust Standard Library imports if your install differs. `npm run build` compiles the TypeScript app; it does not invoke `compact`.
+- **Sim desk** reproduces `#187` without Lace or Preprod — use it for fast judge review.
+- **`/live` and CLI settle** talk to real Midnight Preprod (indexer + node). They need Docker proof server `8.1.0`, tNIGHT, and tDUST.
+- Lace faucet funds and CLI seed funds are **separate wallets** — fund the address you will actually use.
 - Dump-parsing is a **temporary workaround**. Keep the kit API; swap the dump path for the official lookup when `#187` is fixed.
+- `npm run build` compiles the TypeScript app; Compact compile is `npm run compact` (Docker on Windows).
 
 ## Docs
 

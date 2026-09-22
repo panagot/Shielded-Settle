@@ -44,8 +44,9 @@ export function IntegratePage() {
           <h1>Wire the resolver</h1>
         </div>
         <p className="lede">
-          The desk is a simulated ledger. A live app uses the same call after a real deposit.
-          Read <Link to="/gap">why firstFree lies</Link> before you copy this in.
+          The desk is a simulated ledger. For real Preprod deposits use{" "}
+          <Link to="/live">Live</Link> (Lace) or <code>npm run settle:preprod</code>. Read{" "}
+          <Link to="/gap">why firstFree lies</Link> before you copy this in.
         </p>
       </header>
 

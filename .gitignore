@@ -21,3 +21,6 @@ DESIGN.md
 node_modules/@midnight-ntwrk/midnight-js-compact/managed
 tools/compactc-0.31.0
 tools/*.zip
+
+# Local test wallets (never commit)
+.wallet/

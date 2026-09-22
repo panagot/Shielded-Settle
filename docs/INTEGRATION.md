@@ -1,6 +1,6 @@
 # Live integration notes
 
-Use this when moving beyond the local demo ledger.
+Use this when moving beyond the local sim desk — either `/live` (Lace) or the CLI settle path.
 
 ## A. Indexer / public data provider
 
@@ -25,9 +25,17 @@ const result = resolveContractCoinMtIndex({
 
 5. Pass `result.qualified` into your Compact `release` / `refund` witness builder.
 
+On Preprod, this repo’s `/live` page and `npm run settle:preprod` already do steps 1–5 against:
+
+- Indexer: `https://indexer.preprod.midnight.network/api/v4/graphql`
+- Node: `https://rpc.preprod.midnight.network`
+- Proof server: local Docker `:6300` (`npm run proof-server`, image `8.1.0`)
+
 ## B. Proof stack
 
-Escrow settlement still needs a proving path (Lace provider when available, otherwise HTTP proof-server). This kit does not replace proving — it only fixes coin qualification.
+Escrow settlement still needs a proving path (Lace dApp connector, or HTTP proof-server + wallet balancing). This kit does not replace proving — it only fixes coin qualification.
+
+Fees on Midnight consume **tDUST**, which comes from registering tNIGHT (Lace **Generate tDUST**, or `npm run wallet:dust`).
 
 ## C. Suggested project layout
 

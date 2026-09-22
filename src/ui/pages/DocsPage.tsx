@@ -33,6 +33,14 @@ const QUESTIONS = [
     label: "Open demo",
     file: "docs/Shielded-Settle-Deck.pdf",
   },
+  {
+    num: "05",
+    ask: "How do I settle on real Preprod?",
+    answer: "Start the Docker proof server, fund Lace (or a CLI seed) with tNIGHT, Generate tDUST, then open /live or run npm run settle:preprod.",
+    to: "/live",
+    label: "Open Live",
+    file: "docs/HOW_TO_USE.md",
+  },
 ];
 
 export function DocsPage() {
@@ -44,9 +52,9 @@ export function DocsPage() {
           <h1>Start here</h1>
         </div>
         <p className="lede">
-          Three questions cover the demo, the bug, and the call. The markdown files next to the
-          kit are the longer contract. This UI is a simulated ledger, not a wallet, and it does
-          not move mainnet funds.
+          Three questions cover the bug and the kit; Live Preprod is question five. Use the sim
+          desk without a wallet; use <Link to="/live">Live</Link> when you have Lace, Docker
+          proof server, and tDUST. Markdown under <code>docs/</code> is the longer contract.
         </p>
       </header>
 

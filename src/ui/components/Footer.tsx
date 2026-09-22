@@ -12,7 +12,7 @@ export function Footer() {
         <strong>Shielded Settle</strong>
         <p>
           Recover the real Merkle index for contract-owned shielded coins, then spend them.
-          This UI is a simulated ledger for the kit, not a wallet.
+          Sim desk for review; <Link to="/live">Live</Link> for Preprod with Lace.
         </p>
       </div>
 

@@ -4,7 +4,7 @@ import { Tip } from "./Tip";
 const LINKS = [
   { to: "/", label: "Home", tip: "Hackathon overview and one-click judge example." },
   { to: "/desk", label: "Desk", tip: "Run deposit, resolve, and settle on the simulated ledger." },
-  { to: "/live", label: "Live", tip: "Lace + Preprod: real Midnight transactions." },
+  { to: "/live", label: "Live", tip: "Real Preprod settle via Lace + local proof server (:6300)." },
   { to: "/demo", label: "Demo", tip: "Live example settle plus video walkthrough." },
   { to: "/stats", label: "Stats", tip: "Session KPIs for deals settled in this browser tab." },
   { to: "/integrate", label: "Integrate", tip: "TypeScript pattern for wiring the kit into a Compact dApp." },

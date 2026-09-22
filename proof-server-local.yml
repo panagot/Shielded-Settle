@@ -1,6 +1,6 @@
 services:
   proof-server:
-    image: midnightntwrk/proof-server:8.0.3
+    image: midnightntwrk/proof-server:8.1.0
     command: ["midnight-proof-server", "-v"]
     container_name: shielded-settle-proof-server
     ports:

@@ -216,7 +216,7 @@ export function LivePage() {
           <a href={PREPROD.faucet} target="_blank" rel="noreferrer">
             tNIGHT
           </a>{" "}
-          · then Generate tDUST in Lace
+          into <strong>this Lace wallet</strong>, then Generate tDUST in Lace (CLI faucet funds a separate seed).
         </p>
         <p>
           Lace settings: Network <strong>Preprod</strong>, Proof server{" "}

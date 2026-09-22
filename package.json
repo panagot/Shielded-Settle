@@ -14,12 +14,18 @@
     "compact:fetch": "node scripts/fetch-compactc-linux.mjs",
     "compact": "node scripts/compact-docker.mjs && node scripts/copy-zk-assets.mjs",
     "zk:copy": "node scripts/copy-zk-assets.mjs",
+    "wallet:preprod": "node scripts/generate-preprod-wallet.mjs",
+    "wallet:preprod:faucet": "node scripts/generate-preprod-wallet.mjs --faucet",
+    "wallet:sync": "node scripts/check-unshielded-balance.mjs",
+    "wallet:dust": "node scripts/register-dust.mjs",
+    "wallet:wait-dust": "node scripts/wait-dust.mjs",
+    "settle:preprod": "tsx scripts/settle-preprod.ts",
     "proof-server": "docker compose -f proof-server-local.yml up -d",
     "proof-server:down": "docker compose -f proof-server-local.yml down"
   },
   "dependencies": {
     "@midnight-ntwrk/dapp-connector-api": "^4.0.1",
-    "@midnight-ntwrk/ledger-v8": "^8.1.2",
+    "@midnight-ntwrk/ledger-v8": "8.1.2",
     "@midnight-ntwrk/midnight-js-compact": "^4.1.1",
     "@midnight-ntwrk/midnight-js-contracts": "^4.1.1",
     "@midnight-ntwrk/midnight-js-dapp-connector-proof-provider": "^4.1.1",
@@ -32,6 +38,10 @@
     "@midnight-ntwrk/midnight-js-protocol": "^4.1.1",
     "@midnight-ntwrk/midnight-js-types": "^4.1.1",
     "@midnight-ntwrk/midnight-js-utils": "^4.1.1",
+    "@midnight-ntwrk/testkit-js": "^4.1.1",
+    "@midnight-ntwrk/wallet-sdk-address-format": "^3.1.2",
+    "@midnight-ntwrk/wallet-sdk-facade": "^4.0.1",
+    "@midnight-ntwrk/wallet-sdk-unshielded-wallet": "^3.1.0",
     "@phosphor-icons/react": "^2.1.10",
     "@radix-ui/react-tooltip": "^1.2.16",
     "buffer": "^6.0.3",
@@ -50,10 +60,14 @@
     "@types/semver": "^7.8.0",
     "@vitejs/plugin-react": "^5.0.2",
     "cross-env": "^10.1.0",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.2",
     "vite": "^7.1.5",
     "vite-plugin-top-level-await": "^1.6.0",
     "vite-plugin-wasm": "^3.6.0",
     "vitest": "^3.2.4"
+  },
+  "overrides": {
+    "@midnight-ntwrk/ledger-v8": "8.1.2"
   }
 }

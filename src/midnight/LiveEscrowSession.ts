@@ -91,12 +91,13 @@ export class LiveEscrowSession {
     this.log("join", `Joined ${contractAddress}`, "ok");
   }
 
-  async deposit(coin: ShieldedCoinInfo): Promise<string> {
-    const tx = await this.callTx().deposit({
+  async deposit(coin: ShieldedCoinInfo, runtimeCoin?: { nonce: Uint8Array; color: Uint8Array; value: bigint }): Promise<string> {
+    const payload = runtimeCoin ?? {
       nonce: hexToBytes(coin.nonce),
       color: hexToBytes(coin.color),
       value: coin.value,
-    });
+    };
+    const tx = await this.callTx().deposit(payload);
     this.lastCoin = coin;
     const txId = String(tx.public.txId ?? tx.public.txHash ?? "");
     this.log("deposit", `receiveShielded value=${coin.value}`, "ok", txId);

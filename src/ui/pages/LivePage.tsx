@@ -1,12 +1,12 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plugs, Play, WarningCircle } from "@phosphor-icons/react";
+import { Plugs, Play, WarningCircle, ArrowRight } from "@phosphor-icons/react";
 import { createLaceProviders, isLaceAvailable, type LaceSession } from "../../midnight/laceProviders";
 import { LiveEscrowSession, hexKeyToBytes32, type LiveStepLog } from "../../midnight/LiveEscrowSession";
+import { makeDepositCoin } from "../../midnight/makeDepositCoin";
 import { PREPROD } from "../../midnight/config";
-import type { ShieldedCoinInfo } from "@kit/types";
 
-type Busy = null | "connect" | "deploy" | "deposit" | "probe" | "release" | "refund";
+type Busy = null | "connect" | "deploy" | "deposit" | "probe" | "release" | "refund" | "full";
 
 export function LivePage() {
   const [session, setSession] = useState<LaceSession | null>(null);
@@ -15,25 +15,41 @@ export function LivePage() {
   const [error, setError] = useState<string | null>(null);
   const [beneficiaryHex, setBeneficiaryHex] = useState("");
   const [joinAddress, setJoinAddress] = useState("");
-  const [coinNonce, setCoinNonce] = useState("");
-  const [coinColor, setCoinColor] = useState("");
-  const [coinValue, setCoinValue] = useState("25000000");
+  const [amountNight, setAmountNight] = useState("25");
   const [proofOk, setProofOk] = useState<boolean | null>(null);
-  const lacePresent = typeof window !== "undefined" && isLaceAvailable();
+  const [lacePresent, setLacePresent] = useState(false);
 
-  const refreshProof = useCallback(async (uri: string) => {
+  const refreshProof = useCallback(async (uri = PREPROD.proofServer) => {
     try {
       const res = await fetch(uri.replace(/\/$/, "") + "/health", { method: "GET" }).catch(() => null);
       setProofOk(!!res && res.ok);
+      return !!res && res.ok;
     } catch {
       setProofOk(false);
+      return false;
     }
   }, []);
+
+  useEffect(() => {
+    setLacePresent(isLaceAvailable());
+    void refreshProof();
+    const id = window.setInterval(() => {
+      setLacePresent(isLaceAvailable());
+      void refreshProof(session?.proofServerUri ?? PREPROD.proofServer);
+    }, 4000);
+    return () => window.clearInterval(id);
+  }, [refreshProof, session?.proofServerUri]);
 
   async function connect() {
     setBusy("connect");
     setError(null);
     try {
+      const ok = await refreshProof();
+      if (!ok) {
+        throw new Error(
+          "Proof server not reachable at http://127.0.0.1:6300. Run: npm run proof-server (Docker must be running).",
+        );
+      }
       const lace = await createLaceProviders("preprod");
       setSession(lace);
       setLive(new LiveEscrowSession(lace.providers));
@@ -45,14 +61,21 @@ export function LivePage() {
     }
   }
 
+  function atomicAmount(): bigint {
+    const n = Number(amountNight);
+    if (!Number.isFinite(n) || n <= 0) throw new Error("Amount must be a positive number of NIGHT.");
+    return BigInt(Math.round(n * 1_000_000));
+  }
+
   async function deploy() {
     if (!live || !session) return;
     setBusy("deploy");
     setError(null);
     try {
-      const dep = hexKeyToBytes32(stripKey(session.shieldedCoinPublicKey));
-      const benHex = beneficiaryHex.trim() || stripKey(session.shieldedCoinPublicKey);
-      const ben = hexKeyToBytes32(benHex);
+      const dep = partyKey(session.shieldedCoinPublicKey);
+      const ben = beneficiaryHex.trim()
+        ? hexKeyToBytes32(stripKey(beneficiaryHex.trim()))
+        : dep;
       await live.deploy(dep, ben);
       setLive(cloneLive(live));
     } catch (err) {
@@ -81,12 +104,8 @@ export function LivePage() {
     setBusy("deposit");
     setError(null);
     try {
-      const coin: ShieldedCoinInfo = {
-        nonce: normalizeHex(coinNonce),
-        color: normalizeHex(coinColor),
-        value: BigInt(coinValue),
-      };
-      await live.deposit(coin);
+      const made = makeDepositCoin(atomicAmount());
+      await live.deposit(made.kit, made.runtime);
       setLive(cloneLive(live));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -114,7 +133,7 @@ export function LivePage() {
     setBusy("release");
     setError(null);
     try {
-      await live.release(hexKeyToBytes32(stripKey(session.shieldedCoinPublicKey)));
+      await live.release(partyKey(session.shieldedCoinPublicKey));
       setLive(cloneLive(live));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -128,10 +147,39 @@ export function LivePage() {
     setBusy("refund");
     setError(null);
     try {
-      await live.refund(hexKeyToBytes32(stripKey(session.shieldedCoinPublicKey)));
+      await live.refund(partyKey(session.shieldedCoinPublicKey));
       setLive(cloneLive(live));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /** Deploy → deposit → probe/kit → release in one pass (Lace confirms each tx). */
+  async function runFullRelease() {
+    if (!live || !session) return;
+    setBusy("full");
+    setError(null);
+    try {
+      if (!live.contractAddress) {
+        const dep = partyKey(session.shieldedCoinPublicKey);
+        const ben = beneficiaryHex.trim()
+          ? hexKeyToBytes32(stripKey(beneficiaryHex.trim()))
+          : dep;
+        await live.deploy(dep, ben);
+      }
+      const made = makeDepositCoin(atomicAmount());
+      await live.deposit(made.kit, made.runtime);
+      const probed = await live.probe();
+      if (!probed.ok) {
+        throw new Error(probed.warning ?? "Kit could not qualify mtIndex after deposit.");
+      }
+      await live.release(partyKey(session.shieldedCoinPublicKey));
+      setLive(cloneLive(live));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setLive(live ? cloneLive(live) : null);
     } finally {
       setBusy(null);
     }
@@ -145,26 +193,37 @@ export function LivePage() {
           <h1>Live settle</h1>
         </div>
         <p className="lede">
-          Connect Lace on <strong>Preprod</strong>, run a local proof server, then deploy → deposit → probe{" "}
-          <code>firstFree</code> → kit resolve → release. This path hits the Midnight network — not the sim desk.
+          Connect Lace, then run a full shielded escrow on Preprod: deploy → deposit → probe{" "}
+          <code>firstFree</code> → kit resolve → release. Approvals happen in the wallet.
         </p>
       </header>
 
       <div className="live-checklist">
         <p>
           Proof server:{" "}
-          {proofOk === null ? "unchecked" : proofOk ? "reachable" : "down — run npm run proof-server"}
+          <strong className={proofOk ? "accent" : proofOk === false ? "danger" : undefined}>
+            {proofOk === null ? "checking…" : proofOk ? "reachable on :6300" : "down — npm run proof-server"}
+          </strong>
         </p>
-        <p>Lace extension: {lacePresent ? "detected" : "not detected in this browser"}</p>
         <p>
-          Faucet:{" "}
+          Lace extension:{" "}
+          <strong className={lacePresent ? "accent" : "danger"}>
+            {lacePresent ? "detected" : "not detected — install Lace and reload"}
+          </strong>
+        </p>
+        <p>
+          Network: Preprod · Faucet:{" "}
           <a href={PREPROD.faucet} target="_blank" rel="noreferrer">
-            tNIGHT Preprod
+            tNIGHT
           </a>{" "}
           · then Generate tDUST in Lace
         </p>
         <p>
-          Sim path stays on <Link to="/desk">Desk</Link> for judges without Lace.
+          Lace settings: Network <strong>Preprod</strong>, Proof server{" "}
+          <strong>Local (http://localhost:6300)</strong>
+        </p>
+        <p>
+          Sim path (no wallet): <Link to="/desk">Desk</Link> · <Link to="/demo">Demo</Link>
         </p>
       </div>
 
@@ -178,21 +237,19 @@ export function LivePage() {
           <p className="mono">
             Connected · coinPk {short(session.shieldedCoinPublicKey)} · proof {session.proofServerUri}
           </p>
-          <div className="demo-controls">
-            <button type="button" className="btn btn-accent" disabled={!!busy} onClick={deploy}>
-              <Play size={16} weight="fill" />
-              Deploy escrow
-            </button>
-            <button type="button" className="btn btn-line" disabled={!!busy || !joinAddress.trim()} onClick={join}>
-              Join address
-            </button>
+
+          <label className="field-label">
+            Deposit amount (NIGHT)
             <input
               className="field"
-              placeholder="mn_… or hex contract address"
-              value={joinAddress}
-              onChange={(e) => setJoinAddress(e.target.value)}
+              type="number"
+              min="0.000001"
+              step="1"
+              value={amountNight}
+              onChange={(e) => setAmountNight(e.target.value)}
             />
-          </div>
+          </label>
+
           <label className="field-label">
             Beneficiary coin public key (hex, 32 bytes) — blank = self
             <input
@@ -202,6 +259,69 @@ export function LivePage() {
               placeholder="optional · defaults to your coinPk"
             />
           </label>
+
+          <div className="demo-controls">
+            <button
+              type="button"
+              className="btn btn-accent"
+              disabled={!!busy}
+              onClick={runFullRelease}
+            >
+              <Play size={16} weight="fill" />
+              {busy === "full" ? "Running full settle…" : "Run full Preprod settle"}
+            </button>
+            <ArrowRight size={16} className="muted" />
+          </div>
+
+          <div className="demo-controls">
+            <button type="button" className="btn btn-line" disabled={!!busy} onClick={deploy}>
+              1 · Deploy
+            </button>
+            <button
+              type="button"
+              className="btn btn-line"
+              disabled={!!busy || !live?.contractAddress}
+              onClick={deposit}
+            >
+              2 · Deposit
+            </button>
+            <button
+              type="button"
+              className="btn btn-danger"
+              disabled={!!busy || !live?.lastCoin}
+              onClick={probe}
+            >
+              3 · Probe + kit
+            </button>
+            <button
+              type="button"
+              className="btn btn-accent"
+              disabled={!!busy || !live?.lastQualified}
+              onClick={release}
+            >
+              4 · Release
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              disabled={!!busy || !live?.lastQualified}
+              onClick={refund}
+            >
+              Refund
+            </button>
+          </div>
+
+          <div className="demo-controls">
+            <input
+              className="field"
+              placeholder="Join existing contract address"
+              value={joinAddress}
+              onChange={(e) => setJoinAddress(e.target.value)}
+            />
+            <button type="button" className="btn btn-ghost" disabled={!!busy || !joinAddress.trim()} onClick={join}>
+              Join
+            </button>
+          </div>
         </div>
       )}
 
@@ -224,43 +344,6 @@ export function LivePage() {
             </dd>
           </div>
         </dl>
-      )}
-
-      {live?.contractAddress && (
-        <div className="live-fund">
-          <h2>Deposit coin (shielded)</h2>
-          <p className="muted">
-            Paste the shielded coin fields from your wallet / indexer for the deposit you will commit.
-          </p>
-          <div className="form-grid">
-            <label>
-              nonce (hex)
-              <input className="field" value={coinNonce} onChange={(e) => setCoinNonce(e.target.value)} />
-            </label>
-            <label>
-              color (hex)
-              <input className="field" value={coinColor} onChange={(e) => setCoinColor(e.target.value)} />
-            </label>
-            <label>
-              value (atomic)
-              <input className="field" value={coinValue} onChange={(e) => setCoinValue(e.target.value)} />
-            </label>
-          </div>
-          <div className="demo-controls">
-            <button type="button" className="btn btn-line" disabled={!!busy} onClick={deposit}>
-              Deposit · receiveShielded
-            </button>
-            <button type="button" className="btn btn-danger" disabled={!!busy} onClick={probe}>
-              Probe firstFree + kit
-            </button>
-            <button type="button" className="btn btn-accent" disabled={!!busy || !live.lastQualified} onClick={release}>
-              Release on-chain
-            </button>
-            <button type="button" className="btn btn-ghost" disabled={!!busy || !live.lastQualified} onClick={refund}>
-              Refund on-chain
-            </button>
-          </div>
-        </div>
       )}
 
       {error && (
@@ -302,10 +385,13 @@ function stripKey(v: string): string {
   return v.replace(/^0x/, "");
 }
 
-function normalizeHex(v: string): string {
-  const h = v.trim().replace(/^0x/, "");
-  if (!/^[0-9a-fA-F]+$/.test(h) || h.length < 8) {
-    throw new Error("Coin field must be hex.");
-  }
-  return h;
+/** Accept hex coinPk or bech32-ish strings that embed 32-byte hex. */
+function partyKey(raw: string): Uint8Array {
+  const s = stripKey(raw);
+  if (/^[0-9a-fA-F]{64}$/.test(s)) return hexKeyToBytes32(s);
+  const match = s.match(/[0-9a-fA-F]{64}/);
+  if (match) return hexKeyToBytes32(match[0]);
+  throw new Error(
+    "Wallet coin public key is not 32-byte hex. Paste beneficiary as 64 hex chars, or check Lace connector version.",
+  );
 }

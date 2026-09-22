@@ -24,3 +24,4 @@ tools/*.zip
 
 # Local test wallets (never commit)
 .wallet/
+.vercel

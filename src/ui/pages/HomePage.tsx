@@ -1,122 +1,161 @@
-import { ArrowRight, Play } from "@phosphor-icons/react";
-import { Link, useNavigate } from "react-router-dom";
+import { ArrowRight, Wallet, TreeStructure, ShieldCheck } from "@phosphor-icons/react";
+import { Link } from "react-router-dom";
+import { PREPROD } from "../../midnight/config";
 import { useSession } from "../session";
 
-const PILLARS = [
+const ACTIONS = [
   {
-    title: "The gap",
-    body: "Contract-owned shielded coins land in the tree, but firstFree often returns 0. sendShielded then fails.",
-    to: "/gap",
-    label: "Read #187",
+    n: "01",
+    title: "Fund your Lace wallet",
+    body: "Open Lace on Preprod, copy your unshielded address, request tNIGHT from the faucet.",
+    href: PREPROD.faucet,
+    external: true,
+    label: "Open faucet",
   },
   {
-    title: "The kit",
-    body: "resolveContractCoinMtIndex recovers the real mtIndex from the debug dump for this contract only.",
-    to: "/integrate",
-    label: "Copy the call",
-  },
-  {
-    title: "The desk",
-    body: "Sim ledger for judges without Lace — plus /live for real Preprod deposits and releases.",
+    n: "02",
+    title: "Generate tDUST",
+    body: "In Lace: Generate tDUST so fees can be paid. Point proof server to Local (http://localhost:6300).",
     to: "/live",
-    label: "Open Live Preprod",
+    label: "Open Live checklist",
+  },
+  {
+    n: "03",
+    title: "Create the escrow",
+    body: "Connect Lace on /live, then deploy. Depositor and beneficiary default to your coin public key.",
+    to: "/live",
+    label: "Deploy on Preprod",
+  },
+  {
+    n: "04",
+    title: "Deposit and settle",
+    body: "Fund a shielded deposit, probe firstFree (expect 0), let the kit recover mtIndex, then release.",
+    to: "/live",
+    label: "Run full settle",
   },
 ];
 
 export function HomePage() {
-  const navigate = useNavigate();
-  const { runExampleDeal, stats } = useSession();
-
-  function playExample() {
-    runExampleDeal("released");
-    navigate("/demo");
-  }
+  const { stats } = useSession();
 
   return (
     <section className="home">
       <header className="home-hero">
-        <p className="eyebrow">Midnight Korea Hackathon 2026</p>
+        <p className="eyebrow">Midnight Preprod · real txs</p>
         <h1>Shielded Settle</h1>
         <p className="home-tag">
-          Recover the real <code>mtIndex</code> when <code>firstFree</code> returns 0, then release
-          or refund contract-held shielded coins.
+          Create a shielded escrow, deposit coins, recover the real <code>mtIndex</code>, and
+          release — on live Preprod.
         </p>
         <div className="home-actions">
-          <button type="button" className="btn btn-accent" onClick={playExample}>
-            <Play size={18} weight="fill" />
-            Run judge example
-          </button>
+          <Link className="btn btn-accent" to="/live">
+            <Wallet size={18} weight="bold" />
+            Start live settle
+          </Link>
           <Link className="btn btn-line" to="/desk">
-            Settlement desk
+            Practice on sim desk
             <ArrowRight size={16} weight="bold" />
           </Link>
-          <Link className="btn btn-ghost" to="/live">
-            Live Preprod
-          </Link>
-          <a className="btn btn-ghost" href="/deck.html" target="_blank" rel="noreferrer">
-            Slide deck
-          </a>
         </div>
         <p className="home-note">
-          Sim desk for instant review. <Link to="/live">Live Preprod</Link> for real Midnight txs
-          (Lace + local proof server). Compact sample + TypeScript kit for your own Compact dApp.
+          Needs Lace (Preprod) + Docker proof server. Sim desk is optional for reviewers without a
+          wallet.
           {stats.dealsSettled > 0
             ? ` This tab has settled ${stats.dealsSettled} deal${stats.dealsSettled === 1 ? "" : "s"}.`
             : null}
         </p>
       </header>
 
+      <section className="home-actions-block" aria-labelledby="home-actions-heading">
+        <div className="home-actions-head">
+          <h2 id="home-actions-heading">Take action</h2>
+          <p>Four steps from empty Lace to a settled Preprod escrow.</p>
+        </div>
+        <ol className="home-action-list">
+          {ACTIONS.map((step) => (
+            <li key={step.n}>
+              <span className="home-action-n" aria-hidden>
+                {step.n}
+              </span>
+              <div>
+                <h3>{step.title}</h3>
+                <p>{step.body}</p>
+                {step.external && step.href ? (
+                  <a href={step.href} target="_blank" rel="noreferrer">
+                    {step.label}
+                    <ArrowRight size={14} weight="bold" />
+                  </a>
+                ) : (
+                  <Link to={step.to!}>
+                    {step.label}
+                    <ArrowRight size={14} weight="bold" />
+                  </Link>
+                )}
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
       <dl className="home-signals">
         <div className="signal-cell signal-lie">
           <dt>firstFree</dt>
           <dd>0</dd>
-          <small>Documented path lies</small>
+          <small>Public index lies</small>
         </div>
         <div className="signal-cell signal-ledger">
-          <dt>Real ledger</dt>
+          <dt>
+            <TreeStructure size={14} weight="bold" aria-hidden /> Ledger
+          </dt>
           <dd>46+</dd>
-          <small>Position in the tree</small>
+          <small>Real tree position</small>
         </div>
         <div className="signal-cell signal-kit">
-          <dt>Kit mtIndex</dt>
-          <dd>46+</dd>
+          <dt>
+            <ShieldCheck size={14} weight="bold" aria-hidden /> Kit
+          </dt>
+          <dd>mtIndex</dd>
           <small>Qualified for spend</small>
         </div>
         <div className="signal-cell signal-gap">
-          <dt>Result</dt>
-          <dd>Spend</dd>
-          <small>Release or refund once</small>
+          <dt>Then</dt>
+          <dd>Release</dd>
+          <small>Once, on Preprod</small>
         </div>
       </dl>
 
       <div className="home-pillars">
-        {PILLARS.map((pillar) => (
-          <article key={pillar.title} className="home-pillar">
-            <h2>{pillar.title}</h2>
-            <p>{pillar.body}</p>
-            <Link to={pillar.to}>
-              {pillar.label}
-              <ArrowRight size={14} weight="bold" />
-            </Link>
-          </article>
-        ))}
+        <article className="home-pillar">
+          <h2>Why this exists</h2>
+          <p>
+            Contract-owned shielded coins sit in the tree, but <code>firstFree</code> often returns
+            0 — so <code>sendShielded</code> fails until you recover the real index.
+          </p>
+          <Link to="/gap">
+            Read #187
+            <ArrowRight size={14} weight="bold" />
+          </Link>
+        </article>
+        <article className="home-pillar">
+          <h2>Wire the kit</h2>
+          <p>
+            Same <code>resolveContractCoinMtIndex</code> call the Live desk uses after a real
+            deposit.
+          </p>
+          <Link to="/integrate">
+            Copy the call
+            <ArrowRight size={14} weight="bold" />
+          </Link>
+        </article>
+        <article className="home-pillar">
+          <h2>No Lace yet?</h2>
+          <p>Run the full deposit → probe → resolve → release path on the simulated ledger.</p>
+          <Link to="/desk">
+            Open sim desk
+            <ArrowRight size={14} weight="bold" />
+          </Link>
+        </article>
       </div>
-
-      <aside className="home-judge">
-        <h2>For reviewers</h2>
-        <ol className="plain-list">
-          <li>
-            <code>npm install && npm run build && npm test</code>
-          </li>
-          <li>
-            Click <strong>Run judge example</strong>, then inspect Desk / Stats / Gap.
-          </li>
-          <li>
-            Midnight usage: shielded <code>receiveShielded</code> / <code>sendShielded</code> plus
-            off-chain qualification until servicedesk#187 lands.
-          </li>
-        </ol>
-      </aside>
     </section>
   );
 }

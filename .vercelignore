@@ -1,0 +1,15 @@
+# Keep Vercel upload small. Build still runs npm install on their side.
+.wallet
+.vite
+dist
+logs
+tools
+*.tsbuildinfo
+.env
+.env.*
+DESIGN.md
+PRODUCT.md
+
+# Duplicate ZK binaries under contracts/ (served from public/managed)
+contracts/managed/escrow/keys
+contracts/managed/escrow/zkir
